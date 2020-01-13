@@ -1,0 +1,296 @@
+package {{.PackageName}}
+
+import (
+	"context"
+	"github.com/hongshengjie/crud/xsql"
+	{{if .ImportTime}}"time"{{end}}
+)
+{{ $tableName := .GoTableName}}
+// InsertBuilder InsertBuilder
+type InsertBuilder struct {
+	dt      xsql.DBTX
+	builder *xsql.InsertBuilder
+	a    *{{$tableName}}
+}
+
+// Create Create
+func Create(dt xsql.DBTX) *InsertBuilder {
+	return &InsertBuilder{
+		builder: xsql.Insert(table),
+		dt:    dt,
+	}
+}
+
+// Table  涉及到分表查询的时候指定表名，通常情况下不需要调用此方法
+func (in *InsertBuilder) Table(name string) *InsertBuilder {
+	in.builder.Table(name)
+	return in
+}
+
+// Set{{$tableName}} Set{{$tableName}}
+func (in *InsertBuilder) Set{{$tableName}}(a *{{$tableName}}) *InsertBuilder {
+	in.a = a
+	return in
+}
+
+// Save Save
+func (in *InsertBuilder) Save(ctx context.Context) error {
+	ins, args := in.builder.Columns({{ sqltool . true "goinfieldcol"}}).
+	Values({{ sqltool . true "goinfield"}}).
+	Query()
+	result, err := in.dt.ExecContext(ctx,ins, args...)
+	if err != nil {
+		return err
+	}
+ 	{{if .PrimaryKey.IsAutoIncrment}}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	in.a.{{.PrimaryKey.GoColumnName}} = {{.PrimaryKey.GoColumnType}}(id)
+    {{end}}
+
+	return nil
+}
+
+// DeleteBuilder DeleteBuilder
+type DeleteBuilder struct {
+	builder *xsql.DeleteBuilder
+	dt xsql.DBTX
+}
+
+// Delete Delete
+func Delete(dt xsql.DBTX) *DeleteBuilder {
+	return &DeleteBuilder{
+		builder: xsql.Delete(table),
+		dt:    dt,
+	}
+}
+
+
+// Table  涉及到分表查询的时候指定表名，通常情况下不需要调用此方法
+func (d *DeleteBuilder) Table(name string) *DeleteBuilder {
+	d.builder.Table(name)
+	return d
+}
+
+// Where  {{$tableName}}Where
+func (d *DeleteBuilder) Where(p ...{{$tableName}}Where) *DeleteBuilder {
+	s := &xsql.Selector{}
+	for _, v := range p {
+		v(s)
+	}
+	d.builder = d.builder.Where(s.P())
+	return d
+}
+
+// WhereP arg is Predicate
+func (d *DeleteBuilder) WhereP(p *xsql.Predicate) *DeleteBuilder {
+	d.builder = d.builder.Where(p)
+	return d
+}
+
+// By{{.PrimaryKey.GoColumnName}}  delete by primary key
+func (d *DeleteBuilder) By{{.PrimaryKey.GoColumnName}}(id {{.PrimaryKey.GoColumnType}}) *DeleteBuilder {
+	d.builder = d.builder.Where(xsql.EQ({{.PrimaryKey.GoColumnName}}, id))
+	return d
+}
+
+// Exec Exec
+func (d *DeleteBuilder) Exec(ctx context.Context) (int64, error) {
+	del, args := d.builder.Query()
+	res, err := d.dt.ExecContext(ctx, del, args...)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+// SelectBuilder SelectBuilder
+type SelectBuilder struct {
+	builder *xsql.Selector
+	dt xsql.DBTX
+}
+
+// Find Find
+func Find(dt xsql.DBTX) *SelectBuilder {
+	sel := &SelectBuilder{
+		builder: &xsql.Selector{},
+		dt:    dt,
+	}
+	sel.builder = sel.builder.From(xsql.Table(table))
+	return sel
+}
+
+// Table  涉及到分表查询的时候指定表名，通常情况下不需要调用此方法
+func (s *SelectBuilder) Table(name string) *SelectBuilder {
+	s.builder.From(xsql.Table(name))
+	return s
+}
+
+
+// WhereP WhereP
+func (s *SelectBuilder) WhereP(p *xsql.Predicate) *SelectBuilder {
+	s.builder = s.builder.Where(p)
+	return s
+}
+//Where where
+func (s *SelectBuilder) Where(p ...{{$tableName}}Where) *SelectBuilder {
+	sel := &xsql.Selector{}
+	for _, v := range p {
+		v(sel)
+	}
+	s.builder = s.builder.Where(sel.P())
+	return s
+}
+// By{{.PrimaryKey.GoColumnName}} select by primary key
+func (s *SelectBuilder) By{{.PrimaryKey.GoColumnName}}(id {{.PrimaryKey.GoColumnType}}) *SelectBuilder {
+	s.builder.Where(xsql.EQ({{.PrimaryKey.GoColumnName}}, id))
+	return s
+}
+
+// Offset Offset
+func (s *SelectBuilder) Offset(offset int) *SelectBuilder {
+	s.builder = s.builder.Offset(offset)
+	return s
+}
+
+// Limit Limit
+func (s *SelectBuilder) Limit(limit int) *SelectBuilder {
+	s.builder = s.builder.Limit(limit)
+	return s
+}
+
+// OrderDesc OrderDesc
+func (s *SelectBuilder) OrderDesc(field string) *SelectBuilder {
+	s.builder = s.builder.OrderBy(xsql.Desc(field))
+	return s
+}
+
+// OrderAsc OrderAsc
+func (s *SelectBuilder) OrderAsc(field string) *SelectBuilder {
+	s.builder = s.builder.OrderBy(xsql.Asc(field))
+	return s
+}
+
+// One One
+func (s *SelectBuilder) One(ctx context.Context) (*{{$tableName}}, error) {
+	sel, args := s.builder.Query()
+	return QueryRow(ctx, s.dt, sel, args...)
+}
+
+// All find all rows 
+func (s *SelectBuilder) All(ctx context.Context) ([]*{{$tableName}}, error) {
+	sel, args := s.builder.Query()
+	return Query(ctx, s.dt, sel, args...)
+}
+
+// QueryRow find a record by raw sql
+func QueryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}) (*{{$tableName}}, error) {
+	a := {{$tableName}}{}
+	err := dt.QueryRowContext(ctx, sql, args...).Scan({{ sqltool . false "gofield"}})
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// Query FindRaw many record by raw sql
+func Query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*{{$tableName}}, error) {
+
+	q, err := dt.QueryContext(ctx, sqlstr, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	res := []*{{$tableName}}{}
+	for q.Next() {
+		a := {{$tableName}}{}
+		err = q.Scan({{ sqltool . false "gofield"}})
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, &a)
+	}
+	if q.Err() != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+
+// Updater Updater
+type Updater struct {
+	builder *xsql.UpdateBuilder
+	dt xsql.DBTX
+}
+
+// Update return a Updater
+func Update(dt xsql.DBTX) *Updater {
+	return &Updater{
+		dt: dt,
+		builder: xsql.Update(table),
+	}
+}
+
+
+
+// Table  for custom demand  change table name  for example   sub table system
+// In the case of no sub-table you do not need this method
+func (u *Updater) Table(name string) *Updater {
+	u.builder.Table(name)
+	return u
+}
+
+// WhereP WhereP
+func (u *Updater) WhereP(p *xsql.Predicate) *Updater {
+	u.builder.Where(p)
+	return u
+}
+
+// Where Where
+func (u *Updater) Where(p ...{{$tableName}}Where) *Updater {
+	s := &xsql.Selector{}
+	for _, v := range p {
+		v(s)
+	}
+	u.builder = u.builder.Where(s.P())
+	return u
+}
+
+{{ range .Fields }}
+	// Set{{ .GoColumnName }}  set {{ .ColumnName }}
+	func (u *Updater) Set{{ .GoColumnName }} (arg {{  .GoColumnType }}) *Updater {
+		u.builder.Set({{ .GoColumnName }} , arg)
+		return u
+	}
+	{{$c3:=eq .BigType 1}}
+	{{$c4:=not .IsPrimaryKey}}
+	{{if and $c3 $c4}}
+	
+	// Add{{.GoColumnName}}  add  {{.ColumnName}} set x = x + arg 
+	func (u *Updater) Add{{ .GoColumnName }} (arg  interface{}) *Updater {
+		u.builder.Add({{ .GoColumnName }} , arg)
+		return u
+	}
+	{{end}}
+
+{{ end }}
+
+// By{{.PrimaryKey.GoColumnName}}  update by primary key
+func (u *Updater) By{{.PrimaryKey.GoColumnName}}(id {{.PrimaryKey.GoColumnType}}) *Updater {
+	u.builder.Where(xsql.EQ({{.PrimaryKey.GoColumnName}}, id))
+	return u
+}
+
+// Save do a update statment  if tx can without context
+func (u *Updater) Save(ctx context.Context) (int64, error) {
+	up, args := u.builder.Query()
+	result, err := u.dt.ExecContext(ctx, up, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}

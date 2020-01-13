@@ -1,0 +1,23 @@
+
+package {{.PackageName}}
+
+import (
+	{{if .ImportTime}}"time"{{end}}
+)
+{{ $table := .}}
+
+// {{.GoTableName}} represents a row from '{{.TableName}}'.
+type {{.GoTableName}} struct {
+	{{- range .Fields }}
+    	{{ .GoColumnName }} {{  .GoColumnType }} `json:"{{ .ColumnName }}"` // {{ .ColumnComment }}
+    {{- end}}
+}
+
+const (
+    // table tableName is {{.TableName}}
+    table = "{{.TableName}}"
+    {{- range .Fields}}
+        //{{.GoColumnName }} {{.ColumnComment}}
+        {{ .GoColumnName}} = "{{.ColumnName}}"  
+    {{- end }}
+)
