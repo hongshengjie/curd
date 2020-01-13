@@ -25,7 +25,6 @@ func (a *{{.GoName}}) Insert(ctx context.Context, db *sql.DB) error {
 		` {{value . false}}` +
 		`)`
 
-	// run query
 	result, err := db.Exec(ctx, sqlstr, {{govalue . false}})
 	if err != nil {
 		return err
@@ -38,11 +37,10 @@ func (a *{{.GoName}}) Insert(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// {{.GoName}} Update updates the ApAnchorLotDatum in the database.
+// Update Updates 
 func  (a *{{.GoName}})Update(ctx context.Context,db *sql.DB) error {
 	var err error
 
-	// sql query
 	const sqlstr = `UPDATE {{.Name}} SET ` +
 		` {{ updateset . false}}` +
 		` WHERE {{.PrimaryKey.ColumnName}} = ?`
@@ -55,12 +53,10 @@ func  (a *{{.GoName}})Update(ctx context.Context,db *sql.DB) error {
 func {{.GoName}}By{{.PrimaryKey.GoName}}(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoType}})(*{{.GoName}},error){
 	var err error
 
-	// sql query
 	const sqlstr = `SELECT ` +
 		`{{field . true}} ` +
 		`FROM  {{.Name}} ` +
 		`WHERE {{.PrimaryKey.ColumnName}} = ?`
-	// run query
 
 	a := {{.GoName}}{}
 
@@ -76,7 +72,6 @@ func {{.GoName}}By{{.PrimaryKey.GoName}}(ctx context.Context, db *sql.DB, {{.Pri
 func {{.GoName}}Delete(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoType}})error{
 	var err error
 
-    // sql query
     const sqlstr = `DELETE FROM  {{.Name}} WHERE {{.PrimaryKey.ColumnName}} = ?`
 
     _, err = db.Exec(ctx, sqlstr,  {{.PrimaryKey.ColumnName}})
@@ -90,15 +85,14 @@ func {{.GoName}}Delete(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName
 
 {{range $i ,$index := .Indexes}}
 
-    // {{$table.GoName}}By{{$index.IndexGoName}}  {{$table.GoName}}By{{$index.IndexGoName}}
-    func {{$table.GoName}}By{{$index.IndexGoName}}(ctx context.Context, db *sql.DB,{{ goparamlist $index true  }} )({{ if not $index.IsUnique }}[]{{ end }}*{{ $table.GoName }}, error){
-    {{ if $index.IsUnique }}
+// {{$table.GoName}}By{{$index.IndexGoName}}  {{$table.GoName}}By{{$index.IndexGoName}}
+func {{$table.GoName}}By{{$index.IndexGoName}}(ctx context.Context, db *sql.DB,{{ goparamlist $index true  }} )({{ if not $index.IsUnique }}[]{{ end }}*{{ $table.GoName }}, error){
+{{ if $index.IsUnique }}
 
-        // sql query
-        const sqlstr = `SELECT ` +
-            `{{field $table true}} ` +
-            `FROM  {{$table.Name}} ` +
-            `WHERE {{query $index }}`
+    const sqlstr = `SELECT ` +
+        `{{field $table true}} ` +
+        `FROM  {{$table.Name}} ` +
+        `WHERE {{query $index }}`
 
         a := {{$table.GoName}}{}
 
@@ -108,40 +102,33 @@ func {{.GoName}}Delete(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName
         }
 
         return &a, nil
-    }
+}
 
-    {{ else }}
-        // sql query
-            const sqlstr = `SELECT ` +
-                `{{field $table true}} ` +
-                `FROM  {{$table.Name}} ` +
-                `WHERE {{query $index }}`
+{{ else }}
+        const sqlstr = `SELECT ` +
+            `{{field $table true}} ` +
+            `FROM  {{$table.Name}} ` +
+            `WHERE {{query $index }}`
         q, err := db.Query(ctx,sqlstr, {{ goparamlist $index false }})
         if err != nil {
             return nil, err
         }
         defer q.Close()
 
-        // load results
         res := []*{{ $table.GoName}}{}
         for q.Next() {
             a := {{ $table.GoName }}{}
 
-            // scan
             err = q.Scan({{ govalue $table true}})
             if err != nil {
                 return nil, err
             }
-
             res = append(res, &a)
         }
 
         return res, nil
-        }
-
-    {{end}}
-
-
+}
+{{end}}
 
 {{end}}
 

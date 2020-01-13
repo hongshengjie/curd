@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-// Index represents an index.
+// Index Index
 type Index struct {
 	IndexName    string         // index_name
 	IndexGoName  string         // indexGoName
@@ -16,11 +16,10 @@ type Index struct {
 	IndexColumns []*IndexColumn //indexes columns
 }
 
-// MyTableIndexes runs a custom query, returning results as Index.
+// MyTableIndexes  MyTableIndexes
 func MyTableIndexes(db *sql.DB, schema string, table string) ([]*Index, error) {
 	var err error
 
-	// sql query
 	const sqlstr = `SELECT ` +
 		`DISTINCT index_name, ` +
 		`NOT non_unique AS is_unique ` +
@@ -33,12 +32,10 @@ func MyTableIndexes(db *sql.DB, schema string, table string) ([]*Index, error) {
 	}
 	defer q.Close()
 
-	// load results
 	res := []*Index{}
 	for q.Next() {
 		i := Index{}
 
-		// scan
 		err = q.Scan(&i.IndexName, &i.IsUnique)
 		if err != nil {
 			return nil, err

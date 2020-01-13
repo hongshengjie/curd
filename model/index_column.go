@@ -2,7 +2,7 @@ package model
 
 import "database/sql"
 
-// IndexColumn represents index column info.
+// IndexColumn IndexColumn
 type IndexColumn struct {
 	SeqNo           int    // seq_no
 	Cid             int    // cid
@@ -10,11 +10,10 @@ type IndexColumn struct {
 	*Column
 }
 
-// MyIndexColumns runs a custom query, returning results as IndexColumn.
+// MyIndexColumns MyIndexColumns
 func MyIndexColumns(db *sql.DB, schema string, table string, index string) ([]*IndexColumn, error) {
 	var err error
 
-	// sql query
 	const sqlstr = `SELECT ` +
 		`seq_in_index AS seq_no, ` +
 		`column_name ` +
@@ -28,12 +27,10 @@ func MyIndexColumns(db *sql.DB, schema string, table string, index string) ([]*I
 	}
 	defer q.Close()
 
-	// load results
 	res := []*IndexColumn{}
 	for q.Next() {
 		ic := IndexColumn{}
 
-		// scan
 		err = q.Scan(&ic.SeqNo, &ic.IndexColumnName)
 		if err != nil {
 			return nil, err

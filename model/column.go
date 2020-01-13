@@ -5,7 +5,7 @@ import (
 	"github.com/knq/snaker"
 )
 
-// Column represents column info.
+// Column Column
 type Column struct {
 	FieldOrdinal int            // field_ordinal
 	ColumnName   string         // column_name
@@ -17,11 +17,10 @@ type Column struct {
 	GoType       string         // go field type
 }
 
-// MyTableColumns runs a custom query, returning results as Column.
+// MyTableColumns MyTableColumns
 func MyTableColumns(db *sql.DB, schema string, table string) ([]*Column, error) {
 	var err error
 
-	// sql query
 	const sqlstr = `SELECT ` +
 		`ordinal_position AS field_ordinal, ` +
 		`column_name, ` +
@@ -39,12 +38,9 @@ func MyTableColumns(db *sql.DB, schema string, table string) ([]*Column, error) 
 	}
 	defer q.Close()
 
-	// load results
 	res := []*Column{}
 	for q.Next() {
 		c := Column{}
-
-		// scan
 		err = q.Scan(&c.FieldOrdinal, &c.ColumnName, &c.DataType, &c.NotNull, &c.DefaultValue, &c.IsPrimaryKey)
 		if err != nil {
 			return nil, err

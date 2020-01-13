@@ -1,15 +1,15 @@
 package main
 
 import (
-	"curd/model"
-	"curd/tmpl"
 	"database/sql"
 	"flag"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/knq/snaker"
+	"github.com/hongshengjie/curd/model"
+	"github.com/hongshengjie/curd/tmpl"
 	"os"
 	"text/template"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var dsn string
@@ -27,63 +27,19 @@ func main() {
 		os.Exit(0)
 	}
 
-	mytable := model.Table{
-		Name:   table,
-		GoName: snaker.SnakeToCamel(table),
-	}
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		panic(err)
 	}
-	columns, err := model.MyTableColumns(db, schema, table)
-	if err != nil {
-		panic(err)
-	}
-
-	indexs, err := model.MyTableIndexes(db, schema, table)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, v := range indexs {
-		// index column
-		indexcolumn, err := model.MyIndexColumns(db, schema, table, v.IndexName)
-		if err != nil {
-			panic(err)
-		}
-		var indexGoName string
-		for _, d := range indexcolumn {
-			for _, c := range columns {
-				if c.ColumnName == d.IndexColumnName {
-					d.Column = c
-					break
-				}
-			}
-			indexGoName = indexGoName + d.GoName
-
-		}
-
-		v.IndexColumns = indexcolumn
-		v.IndexGoName = indexGoName
-
-	}
-	mytable.Indexes = indexs
-	mytable.Fields = columns
-	for _, v := range columns {
-		if v.IsPrimaryKey {
-			mytable.PrimaryKey = v
-			break
-		}
-	}
-
+	mytable := model.NewTable(db, schema, table)
 	f := template.FuncMap{
-		"field":         model.SqlInsertFields,
-		"value":         model.SqlInsertValue,
-		"govalue":       model.SqlInsertGoValue,
-		"updateset":     model.SqlUpdateSet,
-		"updategovalue": model.SqlUpdateGoValue,
-		"goparamlist":   model.SqlIndexParamList,
-		"query":         model.SqlIndexQuery,
+		"field":         model.SQLInsertFields,
+		"value":         model.SQLInsertValue,
+		"govalue":       model.SQLInsertGoValue,
+		"updateset":     model.SQLUpdateSet,
+		"updategovalue": model.SQLUpdateGoValue,
+		"goparamlist":   model.SQLIndexParamList,
+		"query":         model.SQLIndexQuery,
 	}
 	b, _ := tmpl.Asset("table.tmpl")
 	tpl, err := template.New("mysql").Funcs(f).Parse(string(b))

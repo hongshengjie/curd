@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
+// MysqlTypeToGoType MysqlTypeToGoType
 func MysqlTypeToGoType(dt string) string {
 	if strings.HasSuffix(dt, " unsigned") {
 		dt = dt[:len(dt)-len(" unsigned")]
@@ -81,8 +81,8 @@ func ParsePrecision(dt string) (string, int, int) {
 	return dt, precision, scale
 }
 
-//  gen sql
-func SqlInsertFields(t *Table, all bool) string {
+//SQLInsertFields SQLInsertFields
+func SQLInsertFields(t *Table, all bool) string {
 	var ns []string
 	for _, v := range t.Fields {
 		if !all {
@@ -95,8 +95,8 @@ func SqlInsertFields(t *Table, all bool) string {
 	return strings.Join(ns, ",")
 }
 
-// gen ?
-func SqlInsertValue(t *Table, all bool) string {
+// SQLInsertValue SQLInsertValue
+func SQLInsertValue(t *Table, all bool) string {
 	var ns []string
 	for _, v := range t.Fields {
 		if !all {
@@ -109,8 +109,8 @@ func SqlInsertValue(t *Table, all bool) string {
 	return strings.Join(ns, ",")
 }
 
-//
-func SqlInsertGoValue(t *Table, all bool) string {
+//SQLInsertGoValue SQLInsertGoValue
+func SQLInsertGoValue(t *Table, all bool) string {
 	var ns []string
 	for _, v := range t.Fields {
 		if !all {
@@ -119,12 +119,13 @@ func SqlInsertGoValue(t *Table, all bool) string {
 			}
 		}
 
-		ns = append(ns, "a."+v.GoName)
+		ns = append(ns, "&a."+v.GoName)
 	}
 	return strings.Join(ns, ",")
 }
 
-func SqlUpdateSet(t *Table, all bool) string {
+// SQLUpdateSet SQLUpdateSet
+func SQLUpdateSet(t *Table, all bool) string {
 	var ns []string
 	for _, v := range t.Fields {
 		if !all {
@@ -138,7 +139,8 @@ func SqlUpdateSet(t *Table, all bool) string {
 
 }
 
-func SqlUpdateGoValue(t *Table, all bool) string {
+// SQLUpdateGoValue SQLUpdateGoValue
+func SQLUpdateGoValue(t *Table, all bool) string {
 	var ns []string
 	var prime *Column
 	for _, v := range t.Fields {
@@ -158,7 +160,8 @@ func SqlUpdateGoValue(t *Table, all bool) string {
 	return strings.Join(ns, ",")
 }
 
-func SqlIndexParamList(index *Index, needType bool) string {
+// SQLIndexParamList SQLIndexParamList
+func SQLIndexParamList(index *Index, needType bool) string {
 	var ns []string
 	for _, v := range index.IndexColumns {
 		s := v.ColumnName
@@ -170,7 +173,8 @@ func SqlIndexParamList(index *Index, needType bool) string {
 	return strings.Join(ns, ",")
 }
 
-func SqlIndexQuery(index *Index) string {
+// SQLIndexQuery SQLIndexQuery
+func SQLIndexQuery(index *Index) string {
 	var ns []string
 	for _, v := range index.IndexColumns {
 		s := v.ColumnName + " = ? "
@@ -178,11 +182,4 @@ func SqlIndexQuery(index *Index) string {
 		ns = append(ns, s)
 	}
 	return strings.Join(ns, " AND ")
-}
-
-func LcFirst(str string) string {
-	for i, v := range str {
-		return string(unicode.ToLower(v)) + str[i+1:]
-	}
-	return ""
 }
