@@ -42,6 +42,7 @@ func main() {
 		"query":         model.SQLIndexQuery,
 	}
 	b, _ := tmpl.Asset("table.tmpl")
+	//b,_:=ioutil.ReadFile("tmpl/table.tmpl")
 	tpl, err := template.New("mysql").Funcs(f).Parse(string(b))
 	if err != nil {
 		panic(err)

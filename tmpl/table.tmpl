@@ -15,7 +15,7 @@ type {{.GoName}} struct {
     {{- end }}
 }
 
-// Insert  Insert
+// Insert  Insert a record
 func (a *{{.GoName}}) Insert(ctx context.Context, db *sql.DB) error {
 	var err error
 
@@ -37,7 +37,7 @@ func (a *{{.GoName}}) Insert(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// Update Updates 
+// Update Update a record
 func  (a *{{.GoName}})Update(ctx context.Context,db *sql.DB) error {
 	var err error
 
@@ -49,7 +49,7 @@ func  (a *{{.GoName}})Update(ctx context.Context,db *sql.DB) error {
 	return err
 }
 
-// {{.GoName}}By{{.PrimaryKey.GoName}}  {{.GoName}}By{{.PrimaryKey.GoName}}
+// {{.GoName}}By{{.PrimaryKey.GoName}}   Select a record by primary key:`{{.PrimaryKey.ColumnName}}`
 func {{.GoName}}By{{.PrimaryKey.GoName}}(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoType}})(*{{.GoName}},error){
 	var err error
 
@@ -68,7 +68,7 @@ func {{.GoName}}By{{.PrimaryKey.GoName}}(ctx context.Context, db *sql.DB, {{.Pri
 	return &a, nil
 }
 
-// {{.GoName}}Delete {{.GoName}}Delete
+// {{.GoName}}Delete Delete by primary key:`{{.PrimaryKey.ColumnName}}`
 func {{.GoName}}Delete(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoType}})error{
 	var err error
 
@@ -85,7 +85,7 @@ func {{.GoName}}Delete(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName
 
 {{range $i ,$index := .Indexes}}
 
-// {{$table.GoName}}By{{$index.IndexGoName}}  {{$table.GoName}}By{{$index.IndexGoName}}
+// {{$table.GoName}}By{{$index.IndexGoName}} Select by index name:`{{$index.IndexName}}`
 func {{$table.GoName}}By{{$index.IndexGoName}}(ctx context.Context, db *sql.DB,{{ goparamlist $index true  }} )({{ if not $index.IsUnique }}[]{{ end }}*{{ $table.GoName }}, error){
 {{ if $index.IsUnique }}
 
