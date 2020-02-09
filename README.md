@@ -17,7 +17,6 @@
 
 ## 限制
 1. 不支持复合主键
-2. 不支持枚举类型
 
  
 ## 安装
@@ -36,18 +35,10 @@ go install
 
 ```
 
-curd -dsn='user:pwd@tcp(172.0.0.0:3306)/my-app?parseTime=true'  -schema=my-app -table=my_table  |gofmt
+curd  -dsn='root:1234@tcp(127.0.0.1:3306)/my-app?parseTime=true'  -schema=my-app -table=all_type_table | gofmt 
+
+curd  -dsn='root:1234@tcp(127.0.0.1:3306)/my-app?parseTime=true'  -schema=my-app -table=all_type_table -tmpl=table_bilibili.tmpl | gofmt  > example/bilibili/all_type_table.go
 
 ```
 
 
-
-## 自定义更改模版文件后需要
-
-```
-
-go-bindata -o table.go -pkg tmpl  table.tmpl
-
-go install 
-
-```

@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/hongshengjie/curd/model"
-	"github.com/hongshengjie/curd/tmpl"
 	"os"
 	"text/template"
+
+	"github.com/hongshengjie/curd/mytable"
+	"github.com/hongshengjie/curd/templates"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -15,40 +16,46 @@ import (
 var dsn string
 var table string
 var schema string
+var tmpl string
 
+// go:generate go-bindata -o templates/templates.go -pkg templates  templates
 func main() {
 	// 读取数据库连接地址，table
 	flag.StringVar(&dsn, "dsn", "", "mysql connection url")
 	flag.StringVar(&schema, "schema", "", "schema name")
 	flag.StringVar(&table, "table", "", "table name")
+	flag.StringVar(&tmpl, "tmpl", "", "table name")
 	flag.Parse()
 	if dsn == "" || table == "" || schema == "" {
 		fmt.Println("dns or schema or table is empty")
 		os.Exit(0)
+	}
+	if tmpl == "" {
+		tmpl = "table_std.tmpl"
 	}
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		panic(err)
 	}
-	mytable := model.NewTable(db, schema, table)
+	table := mytable.NewTable(db, schema, table)
 	f := template.FuncMap{
-		"field":         model.SQLInsertFields,
-		"value":         model.SQLInsertValue,
-		"govalue":       model.SQLInsertGoValue,
-		"updateset":     model.SQLUpdateSet,
-		"updategovalue": model.SQLUpdateGoValue,
-		"goparamlist":   model.SQLIndexParamList,
-		"query":         model.SQLIndexQuery,
+		"sqltool":     mytable.SQLTool,
+		"sqlupdate":   mytable.SQLUpdate,
+		"goparamlist": mytable.SQLIndexParamList,
+		"query":       mytable.SQLIndexQuery,
 	}
-	b, _ := tmpl.Asset("table.tmpl")
-	//b,_:=ioutil.ReadFile("tmpl/table.tmpl")
+	b, err := templates.Asset("templates/" + tmpl)
+	if err != nil {
+		panic(err)
+	}
+	//b, _ := ioutil.ReadFile("templates/table_bilibili.tmpl")
 	tpl, err := template.New("mysql").Funcs(f).Parse(string(b))
 	if err != nil {
 		panic(err)
 	}
 
-	err = tpl.Execute(os.Stdout, &mytable)
+	err = tpl.Execute(os.Stdout, &table)
 	if err != nil {
 		panic(err)
 	}
