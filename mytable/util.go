@@ -59,7 +59,7 @@ func SQLTool(t *Table, omit bool, flag string) string {
 	var ns []string
 	for _, v := range t.Fields {
 		if omit {
-			if v.IsPrimaryKey || v.IsDefaultCurrentTimestamp {
+			if v.IsAutoIncrment || v.IsDefaultCurrentTimestamp {
 				continue
 			}
 		}
