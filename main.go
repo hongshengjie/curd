@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"text/template"
 
 	"github.com/hongshengjie/curd/mytable"
@@ -24,7 +26,7 @@ func main() {
 	flag.StringVar(&dsn, "dsn", "", "mysql connection url")
 	flag.StringVar(&schema, "schema", "", "schema name")
 	flag.StringVar(&table, "table", "", "table name")
-	flag.StringVar(&tmpl, "tmpl", "", "table name")
+	flag.StringVar(&tmpl, "tmpl", "", "template name")
 	flag.Parse()
 	if dsn == "" || table == "" || schema == "" {
 		fmt.Println("dns or schema or table is empty")
@@ -54,9 +56,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	err = tpl.Execute(os.Stdout, &table)
-	if err != nil {
+	bs :=bytes.NewBufferString("")
+	err = tpl.Execute(bs, &table)
+	if err!=nil{
 		panic(err)
 	}
+	gofmt:=exec.Command("gofmt")
+	gofmt.Stdin=bs
+	gofmt.Stdout=os.Stdout
+	gofmt.Run()
+
 }
