@@ -2,8 +2,9 @@
 package model
 
 import (
+    "context"
 	"database/sql"
-	"time"
+	{{if .ImportTime}}"time"{{end}}
 )
 {{ $table := .}}
 
@@ -15,7 +16,7 @@ type {{.GoTableName}} struct {
 }
 
 // Insert  Insert a record
-func (a *{{.GoTableName}}) Insert(db *sql.DB) error {
+func (a *{{.GoTableName}}) Insert(ctx context.Context, db *sql.DB) error {
 	var err error
 
 	const sqlstr = `INSERT INTO  {{ .TableName}} (` +
@@ -24,7 +25,7 @@ func (a *{{.GoTableName}}) Insert(db *sql.DB) error {
 		` {{ sqltool . true "?"}}` +
 		`)`
 
-	result, err := db.Exec(sqlstr, {{ sqltool . true "gofield"}})
+	result, err := db.ExecContext(ctx, sqlstr, {{ sqltool . true "gofield"}})
 	if err != nil {
 		return err
 	}
@@ -39,12 +40,12 @@ func (a *{{.GoTableName}}) Insert(db *sql.DB) error {
 }
 
 // {{.GoTableName}}Delete Delete by primary key:`{{.PrimaryKey.ColumnName}}`
-func {{.GoTableName}}Delete(db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoColumnType}})error{
+func {{.GoTableName}}Delete(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoColumnType}})error{
 	var err error
 
     const sqlstr = `DELETE FROM  {{.TableName}} WHERE {{.PrimaryKey.ColumnName}} = ?`
 
-    _, err = db.Exec(sqlstr,{{.PrimaryKey.ColumnName}})
+    _, err = db.ExecContext(ctx, sqlstr,{{.PrimaryKey.ColumnName}})
     if err != nil {
     	return err
     }
@@ -53,7 +54,7 @@ func {{.GoTableName}}Delete(db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey
 
 
 // {{.GoTableName}}By{{.PrimaryKey.GoColumnName}}   Select a record by primary key:`{{.PrimaryKey.ColumnName}}`
-func {{.GoTableName}}By{{.PrimaryKey.GoColumnName}}(db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoColumnType}})(*{{.GoTableName}},error){
+func {{.GoTableName}}By{{.PrimaryKey.GoColumnName}}(ctx context.Context, db *sql.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoColumnType}})(*{{.GoTableName}},error){
 	var err error
 
 	const sqlstr = `SELECT ` +
@@ -63,7 +64,7 @@ func {{.GoTableName}}By{{.PrimaryKey.GoColumnName}}(db *sql.DB, {{.PrimaryKey.Co
 
 	a := {{.GoTableName}}{}
 
-	err = db.QueryRow(sqlstr, {{.PrimaryKey.ColumnName}}).Scan({{ sqltool . false "gofield"}})
+	err = db.QueryRowContext(ctx, sqlstr, {{.PrimaryKey.ColumnName}}).Scan({{ sqltool . false "gofield"}})
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +73,14 @@ func {{.GoTableName}}By{{.PrimaryKey.GoColumnName}}(db *sql.DB, {{.PrimaryKey.Co
 }
 
 // Update Update a record
-func  (a *{{.GoTableName}})Update(db *sql.DB) error {
+func  (a *{{.GoTableName}})Update(ctx context.Context, db *sql.DB) error {
 	var err error
 
 	const sqlstr = `UPDATE {{.TableName}} SET ` +
 		` {{sqltool . true "set"}}` +
 		` WHERE {{.PrimaryKey.ColumnName}} = ?`
 
-	_, err = db.Exec(sqlstr,{{sqlupdate . true }})
+	_, err = db.ExecContext(ctx, sqlstr,{{sqlupdate . true }})
 	return err
 }
 
@@ -87,7 +88,7 @@ func  (a *{{.GoTableName}})Update(db *sql.DB) error {
 {{range $i ,$index := .Indexes}}
 
 // {{$table.GoTableName}}By{{$index.GoIndexName}} Select by index name:`{{$index.IndexName}}`
-func {{$table.GoTableName}}By{{$index.GoIndexName}}(db *sql.DB,{{ goparamlist $index true  }} )({{ if not $index.IsUnique }}[]{{ end }}*{{ $table.GoTableName }}, error){
+func {{$table.GoTableName}}By{{$index.GoIndexName}}(ctx context.Context, db *sql.DB,{{ goparamlist $index true  }} )({{ if not $index.IsUnique }}[]{{ end }}*{{ $table.GoTableName }}, error){
 {{ if $index.IsUnique }}
 
     const sqlstr = `SELECT ` +
@@ -97,7 +98,7 @@ func {{$table.GoTableName}}By{{$index.GoIndexName}}(db *sql.DB,{{ goparamlist $i
 
         a := {{$table.GoTableName}}{}
 
-        err := db.QueryRow(sqlstr, {{goparamlist $index false}}).Scan({{sqltool $table false "gofield"}})
+        err := db.QueryRowContext(ctx, sqlstr, {{goparamlist $index false}}).Scan({{sqltool $table false "gofield"}})
         if err != nil {
             return nil, err
         }
@@ -110,7 +111,7 @@ func {{$table.GoTableName}}By{{$index.GoIndexName}}(db *sql.DB,{{ goparamlist $i
             `{{sqltool $table false "field"}} ` +
             `FROM  {{$table.TableName}} ` +
             `WHERE {{query $index }}`
-        q, err := db.Query(sqlstr, {{ goparamlist $index false }})
+        q, err := db.QueryContext(ctx, sqlstr, {{ goparamlist $index false }})
         if err != nil {
             return nil, err
         }

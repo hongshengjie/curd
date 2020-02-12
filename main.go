@@ -32,7 +32,7 @@ func main() {
 		os.Exit(0)
 	}
 	if tmpl == "" {
-		tmpl = "table_std.tmpl"
+		tmpl = "std.tmpl"
 	}
 
 	db, err := sql.Open("mysql", dsn)

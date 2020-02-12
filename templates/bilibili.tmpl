@@ -4,7 +4,7 @@ package model
 import (
     "context"
 	"go-common/library/database/sql"
-	"time"
+	{{if .ImportTime}}"time"{{end}}
 )
 {{ $table := .}}
 

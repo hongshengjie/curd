@@ -13,6 +13,7 @@ type Table struct {
 	Fields      []*Column // columns
 	Indexes     []*Index  // indexes
 	PrimaryKey  *Column   // priomary_key column
+	ImportTime  bool      // is need import time
 }
 
 // NewTable NewTable
@@ -51,6 +52,12 @@ func NewTable(db *sql.DB, schema, table string) *Table {
 	for _, v := range columns {
 		if v.IsPrimaryKey {
 			mytable.PrimaryKey = v
+			break
+		}
+	}
+	for _, v := range columns {
+		if v.GoColumnType == "time.Time" {
+			mytable.ImportTime = true
 			break
 		}
 	}

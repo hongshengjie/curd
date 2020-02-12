@@ -37,7 +37,7 @@ go install
 
 curd  -dsn='root:1234@tcp(127.0.0.1:3306)/my-app?parseTime=true'  -schema=my-app -table=all_type_table  
 
-curd  -dsn='root:1234@tcp(127.0.0.1:3306)/my-app?parseTime=true'  -schema=my-app -table=all_type_table -tmpl=table_bilibili.tmpl  > example/bilibili/all_type_table.go
+curd  -dsn='root:1234@tcp(127.0.0.1:3306)/my-app?parseTime=true'  -schema=my-app -table=all_type_table -tmpl=bilibili.tmpl  > example/bilibili/all_type_table.go
 
 ```
 
