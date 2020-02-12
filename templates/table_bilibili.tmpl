@@ -127,6 +127,9 @@ func {{$table.GoTableName}}By{{$index.GoIndexName}}(ctx context.Context, db *sql
             }
             res = append(res, &a)
         }
+        if q.Err() != nil {
+                return nil, err
+        }
 
         return res, nil
 }

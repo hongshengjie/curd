@@ -10,7 +10,6 @@ import (
 	"text/template"
 
 	"github.com/hongshengjie/curd/mytable"
-	"github.com/hongshengjie/curd/templates"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -20,7 +19,7 @@ var table string
 var schema string
 var tmpl string
 
-// go:generate go-bindata -o templates/templates.go -pkg templates  templates
+// go:generate go-bindata -o mytable/templates.go -pkg mytable  templates
 func main() {
 	// 读取数据库连接地址，table
 	flag.StringVar(&dsn, "dsn", "", "mysql connection url")
@@ -47,7 +46,7 @@ func main() {
 		"goparamlist": mytable.SQLIndexParamList,
 		"query":       mytable.SQLIndexQuery,
 	}
-	b, err := templates.Asset("templates/" + tmpl)
+	b, err := mytable.Asset("templates/" + tmpl)
 	if err != nil {
 		panic(err)
 	}
@@ -56,14 +55,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	bs :=bytes.NewBufferString("")
+	bs := bytes.NewBufferString("")
 	err = tpl.Execute(bs, &table)
-	if err!=nil{
+	if err != nil {
 		panic(err)
 	}
-	gofmt:=exec.Command("gofmt")
-	gofmt.Stdin=bs
-	gofmt.Stdout=os.Stdout
+	gofmt := exec.Command("gofmt")
+	gofmt.Stdin = bs
+	gofmt.Stdout = os.Stdout
 	gofmt.Run()
 
 }

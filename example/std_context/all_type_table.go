@@ -151,6 +151,9 @@ func AllTypeTableByMIntVarcharMTimestampM(ctx context.Context, db *sql.DB, m_int
 		}
 		res = append(res, &a)
 	}
+	if q.Err() != nil {
+		return nil, err
+	}
 
 	return res, nil
 }
@@ -177,6 +180,9 @@ func AllTypeTableByTIntSInt(ctx context.Context, db *sql.DB, t_int int8, s_int u
 			return nil, err
 		}
 		res = append(res, &a)
+	}
+	if q.Err() != nil {
+		return nil, err
 	}
 
 	return res, nil
