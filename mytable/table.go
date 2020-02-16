@@ -55,6 +55,9 @@ func NewTable(db *sql.DB, schema, table string) *Table {
 			break
 		}
 	}
+	if mytable.PrimaryKey == nil {
+		panic("table do not have a primary key")
+	}
 	for _, v := range columns {
 		if v.GoColumnType == "time.Time" {
 			mytable.ImportTime = true
