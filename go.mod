@@ -1,4 +1,4 @@
-module github.com/hongshengjie/curd
+module curd
 
 go 1.12
 
