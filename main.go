@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"text/template"
 
-	"curd/mytable"
+	"crud/mytable"
 
 	_ "github.com/go-sql-driver/mysql"
 )

@@ -1,6 +1,4 @@
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
-github.com/hongshengjie/curd v0.0.0-20200216071453-3fdc0d69c194 h1:9q1ZR3VCWJA11+k6MkBYcjk9+sANzia9ub8JukcaK88=
-github.com/hongshengjie/curd v0.0.0-20200216071453-3fdc0d69c194/go.mod h1:JQzoNl7OVatukRnffMJut7JDijOTeqkRqIAx36EcSfs=
 github.com/knq/snaker v0.0.0-20181215144011-2bc8a4db4687 h1:ZrOZbqW7T2EgLd4soRATeSZrP3ijy2CgNFXG44cUuS8=
 github.com/knq/snaker v0.0.0-20181215144011-2bc8a4db4687/go.mod h1:f0Dmq8fkddh8nOsVabYmtOHHdxlq2q4X+LQ1xWQEdUU=
