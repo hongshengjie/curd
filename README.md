@@ -41,4 +41,8 @@ crud  -dsn='root:1234@tcp(127.0.0.1:3306)/my-app?parseTime=true'  -schema=my-app
 
 ```
 
+## TODO 
 
+1. 单个表生成目录，单独的包
+2. update 可以指定更新那些字段
+3. 可以自由组合where条件
