@@ -1,9 +1,10 @@
 package user
 
 import (
+	"bytes"
 	"context"
 	"crud"
-	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,24 +19,22 @@ type User struct {
 }
 
 const (
-	table  = "user"
+	table  = "`user`"
 	fields = "`id`,`name`,`age`,`ctime`"
 	// ID id字段
-	ID = "id"
+	ID = "`id`"
 	// Name 名称
-	Name = "name"
+	Name = "`name`"
 	// Age 年龄
-	Age = "age"
+	Age = "`age`"
 	// Ctime 创建时间
-	Ctime = "ctime"
+	Ctime = "`ctime`"
 )
 
 // Insert  Insert a record
-func Insert(ctx context.Context, db *sql.DB, a *User) error {
-	var err error
-
-	const sqlstr = `INSERT INTO  user (` +
-		` name,age,ctime` +
+func Insert(ctx context.Context, db crud.DB, a *User) error {
+	const sqlstr = "INSERT INTO  `user` (" +
+		"`name`,`age`,`ctime`" +
 		`) VALUES (` +
 		` ?,?,?` +
 		`)`
@@ -54,90 +53,36 @@ func Insert(ctx context.Context, db *sql.DB, a *User) error {
 	return nil
 }
 
-func Query() crud.QueryBuilder {
-	return &crud.Query{
-		Table:        table,
-		QueryBuilder: strings.Builder{},
-		Fields:       fields,
-		Where:        Where(),
-	}
-}
-
-func Where() *crud.Where {
-	return &crud.Where{
-		Fields:        fields,
-		Table:         table,
-		StringBuilder: strings.Builder{},
-	}
-}
-
 // UserDelete Delete by primary key:`id`
-func Delete(ctx context.Context, db *sql.DB, id uint32) error {
-	var err error
-
-	const sqlstr = `DELETE FROM  user WHERE id = ?`
-
-	_, err = db.ExecContext(ctx, sqlstr, id)
+func Delete(ctx context.Context, db crud.DB, id uint32) error {
+	const sqlstr = "DELETE FROM `user` WHERE id = ?"
+	_, err := db.ExecContext(ctx, sqlstr, id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-type UpdateBuilder interface {
-	SetName(arg interface{}) UpdateBuilder
-	SetAge(arg interface{}) UpdateBuilder
-	SetCtime(arg interface{}) UpdateBuilder
-	Update(ctx context.Context, db *sql.DB, selecter crud.WhereBuilder) error
+func Where() *crud.Where {
+	return &crud.Where{}
 }
 
-type Updater struct {
-	Builder strings.Builder
-	Args    []interface{}
-	Fields  []string
-}
-
-func NewUpdater() *Updater {
-	u := &Updater{
-		Builder: strings.Builder{},
-		Args:    []interface{}{},
-		Fields:  []string{},
+func Query(where crud.WhereBuilder) crud.QueryBuilder {
+	return &crud.Query{
+		Table:     table,
+		AllFields: fields,
+		Where:     where,
 	}
-
-	return u
 }
 
-func (u *Updater) SetName(arg interface{}) UpdateBuilder {
-	u.Fields = append(u.Fields, "`name` = ? ")
-	u.Args = append(u.Args, arg)
-	return u
-
-}
-func (u *Updater) SetAge(arg interface{}) UpdateBuilder {
-	u.Fields = append(u.Fields, "`age` = ? ")
-	u.Args = append(u.Args, arg)
-	return u
-
-}
-func (u *Updater) SetCtime(arg interface{}) UpdateBuilder {
-	u.Fields = append(u.Fields, "`ctime` = ? ")
-	u.Args = append(u.Args, arg)
-	return u
+func Find(ctx context.Context, db crud.DB, build crud.Builder) ([]*User, error) {
+	sql, args := build.Build()
+	return FindRaw(ctx, db, sql, args...)
 }
 
-// TODO 校验条件
-func (u *Updater) Update(ctx context.Context, db *sql.DB, selecter crud.WhereBuilder) error {
-	u.Builder.WriteString("UPDATE user SET ")
-	u.Builder.WriteString(strings.Join(u.Fields, ","))
-	u.Builder.WriteString(selecter.WhereString())
-	fmt.Println(u.Builder.String())
-	_, err := db.ExecContext(ctx, u.Builder.String(), append(u.Args, selecter.ArgSlice()...)...)
-	return err
-}
-
-func Find(ctx context.Context, db *sql.DB, build crud.QueryBuilder) ([]*User, error) {
-	fmt.Println(build.QueryString())
-	q, err := db.QueryContext(ctx, build.QueryString(), build.ArgSlice()...)
+func FindRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) ([]*User, error) {
+	fmt.Println(sql, args)
+	q, err := db.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,11 +104,16 @@ func Find(ctx context.Context, db *sql.DB, build crud.QueryBuilder) ([]*User, er
 	return res, nil
 }
 
-func FindOne(ctx context.Context, db *sql.DB, build crud.QueryBuilder) (*User, error) {
-	var err error
+func FindOne(ctx context.Context, db crud.DB, build crud.Builder) (*User, error) {
+	sql, args := build.Build()
+	return FindOneRaw(ctx, db, sql, args...)
+
+}
+
+func FindOneRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) (*User, error) {
+	fmt.Println(sql, args)
 	a := User{}
-	fmt.Println(build.QueryString())
-	err = db.QueryRowContext(ctx, build.QueryString(), build.ArgSlice()...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
+	err := db.QueryRowContext(ctx, sql, args...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
 	if err != nil {
 		return nil, err
 	}
@@ -171,14 +121,76 @@ func FindOne(ctx context.Context, db *sql.DB, build crud.QueryBuilder) (*User, e
 	return &a, nil
 }
 
-func Count(ctx context.Context, db *sql.DB, build crud.WhereBuilder) (int64, error) {
-	var err error
+func Count(ctx context.Context, db crud.DB, build crud.Builder) (int64, error) {
+
+	sql, args := build.Build()
+	fmt.Println(sql, args)
 	var a int64
-	fmt.Println(build.WhereString())
-	err = db.QueryRowContext(ctx, "SELECT COUNT(1) FROM user "+build.WhereString(), build.ArgSlice()...).Scan(&a)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(1) FROM `user` "+sql, args...).Scan(&a); err != nil {
+		return 0, err
+	}
+	return a, nil
+}
+
+type UpdateBuilder interface {
+	SetName(arg interface{}) UpdateBuilder
+	SetAge(arg interface{}) UpdateBuilder
+	SetCtime(arg interface{}) UpdateBuilder
+	Save(ctx context.Context, db crud.DB) (int64, error)
+}
+
+type Updater struct {
+	where  crud.WhereBuilder
+	Args   []interface{}
+	Fields []string
+}
+
+func Update(where crud.WhereBuilder) *Updater {
+	return &Updater{
+		where: where,
+	}
+}
+
+func (u *Updater) SetName(arg interface{}) UpdateBuilder {
+	u.Fields = append(u.Fields, "`name` = ? ")
+	u.Args = append(u.Args, arg)
+	return u
+
+}
+func (u *Updater) SetAge(arg interface{}) UpdateBuilder {
+	u.Fields = append(u.Fields, "`age` = ? ")
+	u.Args = append(u.Args, arg)
+	return u
+
+}
+func (u *Updater) SetCtime(arg interface{}) UpdateBuilder {
+	u.Fields = append(u.Fields, "`ctime` = ? ")
+	u.Args = append(u.Args, arg)
+	return u
+}
+
+// TODO 校验条件
+func (u *Updater) Save(ctx context.Context, db crud.DB) (int64, error) {
+	var where string
+	var args []interface{}
+	if u.where != nil {
+		where, args = u.where.Build()
+	}
+	if len(u.Fields) <= 0 {
+		return 0, errors.New("not set update fields")
+	}
+
+	var b bytes.Buffer
+	b.WriteString("UPDATE ")
+	b.WriteString(table)
+	b.WriteString(" SET ")
+	b.WriteString(strings.Join(u.Fields, ","))
+	b.WriteString(where)
+	u.Args = append(u.Args, args...)
+	fmt.Println(b.String(), u.Args)
+	result, err := db.ExecContext(ctx, b.String(), u.Args...)
 	if err != nil {
 		return 0, err
 	}
-
-	return a, nil
+	return result.RowsAffected()
 }
