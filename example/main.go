@@ -2,20 +2,20 @@ package main
 
 import (
 	"context"
-	"crud/user"
+
 	"database/sql"
 	"encoding/json"
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/hongshengjie/crud/example/user"
 )
 
 var db *sql.DB
 var dsn = "root:root@tcp(127.0.0.1:3306)/example?parseTime=true"
 var ctx = context.Background()
 
-func init() {
-
+func InitDB() {
 	var err error
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
@@ -23,12 +23,14 @@ func init() {
 	}
 }
 func main() {
-	//create()
+	InitDB()
+	create()
 	findOne()
 	find()
 	update()
 	count()
 	tx()
+	db.Close()
 
 }
 func create() {

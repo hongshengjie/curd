@@ -2,6 +2,7 @@ package mytable
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/knq/snaker"
 )
@@ -10,6 +11,7 @@ import (
 type Table struct {
 	TableName   string    // table name
 	GoTableName string    // go struct name
+	PackageName string    // package name
 	Fields      []*Column // columns
 	Indexes     []*Index  // indexes
 	PrimaryKey  *Column   // priomary_key column
@@ -18,9 +20,11 @@ type Table struct {
 
 // NewTable NewTable
 func NewTable(db *sql.DB, schema, table string) *Table {
+	gotableName := snaker.SnakeToCamelIdentifier(table)
 	mytable := &Table{
 		TableName:   table,
-		GoTableName: snaker.SnakeToCamelIdentifier(table),
+		GoTableName: gotableName,
+		PackageName: strings.ToLower(gotableName),
 	}
 	columns, err := MyTableColumns(db, schema, table)
 	if err != nil {

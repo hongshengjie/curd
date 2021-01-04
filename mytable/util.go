@@ -65,7 +65,7 @@ func SQLTool(t *Table, omit bool, flag string) string {
 		}
 		switch flag {
 		case "field":
-			ns = append(ns, v.ColumnName)
+			ns = append(ns, "`"+v.ColumnName+"`")
 		case "?":
 			ns = append(ns, "?")
 		case "gofield":

@@ -3,9 +3,8 @@ package user
 import (
 	"bytes"
 	"context"
-	"crud"
 	"errors"
-	"fmt"
+	"github.com/hongshengjie/crud"
 	"strings"
 	"time"
 )
@@ -21,25 +20,25 @@ type User struct {
 const (
 	table  = "`user`"
 	fields = "`id`,`name`,`age`,`ctime`"
-	// ID id字段
+	//ID id字段
 	ID = "`id`"
-	// Name 名称
+	//Name 名称
 	Name = "`name`"
-	// Age 年龄
+	//Age 年龄
 	Age = "`age`"
-	// Ctime 创建时间
+	//Ctime 创建时间
 	Ctime = "`ctime`"
 )
 
 // Insert  Insert a record
 func Insert(ctx context.Context, db crud.DB, a *User) error {
 	const sqlstr = "INSERT INTO  `user` (" +
-		"`name`,`age`,`ctime`" +
+		" `name`,`age`" +
 		`) VALUES (` +
-		` ?,?,?` +
+		` ?,?` +
 		`)`
 
-	result, err := db.ExecContext(ctx, sqlstr, &a.Name, &a.Age, &a.Ctime)
+	result, err := db.ExecContext(ctx, sqlstr, &a.Name, &a.Age)
 	if err != nil {
 		return err
 	}
@@ -53,20 +52,22 @@ func Insert(ctx context.Context, db crud.DB, a *User) error {
 	return nil
 }
 
-// UserDelete Delete by primary key:`id`
-func Delete(ctx context.Context, db crud.DB, id uint32) error {
-	const sqlstr = "DELETE FROM `user` WHERE id = ?"
-	_, err := db.ExecContext(ctx, sqlstr, id)
+// Delete Delete by primary key:`id`
+func Delete(ctx context.Context, db crud.DB, id uint32) (int64, error) {
+	const sqlstr = `DELETE FROM  user WHERE id = ?`
+	result, err := db.ExecContext(ctx, sqlstr, id)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return result.RowsAffected()
 }
 
+// Where  create where builder for update or query
 func Where() *crud.Where {
 	return &crud.Where{}
 }
 
+// Query create query builder  maybe with where builder
 func Query(where crud.WhereBuilder) crud.QueryBuilder {
 	return &crud.Query{
 		Table:     table,
@@ -75,13 +76,30 @@ func Query(where crud.WhereBuilder) crud.QueryBuilder {
 	}
 }
 
+// FindOne find a record
+func FindOne(ctx context.Context, db crud.DB, build crud.Builder) (*User, error) {
+	sql, args := build.Build()
+	return FindOneRaw(ctx, db, sql, args...)
+}
+
+// FindOneRaw find a record by raw sql
+func FindOneRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) (*User, error) {
+	a := User{}
+	err := db.QueryRowContext(ctx, sql, args...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// Find Find many record by where statment or query statment
 func Find(ctx context.Context, db crud.DB, build crud.Builder) ([]*User, error) {
 	sql, args := build.Build()
 	return FindRaw(ctx, db, sql, args...)
 }
 
+// FindRaw FindRaw many record by raw sql
 func FindRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) ([]*User, error) {
-	fmt.Println(sql, args)
 	q, err := db.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -104,27 +122,9 @@ func FindRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) (
 	return res, nil
 }
 
-func FindOne(ctx context.Context, db crud.DB, build crud.Builder) (*User, error) {
-	sql, args := build.Build()
-	return FindOneRaw(ctx, db, sql, args...)
-
-}
-
-func FindOneRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) (*User, error) {
-	fmt.Println(sql, args)
-	a := User{}
-	err := db.QueryRowContext(ctx, sql, args...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
-	if err != nil {
-		return nil, err
-	}
-
-	return &a, nil
-}
-
+// Count Count return number of rows that fit the where statment
 func Count(ctx context.Context, db crud.DB, build crud.Builder) (int64, error) {
-
 	sql, args := build.Build()
-	fmt.Println(sql, args)
 	var a int64
 	if err := db.QueryRowContext(ctx, "SELECT COUNT(1) FROM `user` "+sql, args...).Scan(&a); err != nil {
 		return 0, err
@@ -132,44 +132,58 @@ func Count(ctx context.Context, db crud.DB, build crud.Builder) (int64, error) {
 	return a, nil
 }
 
+// UpdateBuilder UpdateBuilder
 type UpdateBuilder interface {
-	SetName(arg interface{}) UpdateBuilder
-	SetAge(arg interface{}) UpdateBuilder
-	SetCtime(arg interface{}) UpdateBuilder
+	SetID(arg uint32) UpdateBuilder
+	SetName(arg string) UpdateBuilder
+	SetAge(arg int32) UpdateBuilder
+	SetCtime(arg time.Time) UpdateBuilder
 	Save(ctx context.Context, db crud.DB) (int64, error)
 }
 
+// Updater Updater
 type Updater struct {
 	where  crud.WhereBuilder
 	Args   []interface{}
 	Fields []string
 }
 
+// Update return a Updater
 func Update(where crud.WhereBuilder) *Updater {
 	return &Updater{
 		where: where,
 	}
 }
 
-func (u *Updater) SetName(arg interface{}) UpdateBuilder {
+// SetID set id
+func (u *Updater) SetID(arg uint32) UpdateBuilder {
+	u.Fields = append(u.Fields, "`id` = ? ")
+	u.Args = append(u.Args, arg)
+	return u
+}
+
+// SetName set name
+func (u *Updater) SetName(arg string) UpdateBuilder {
 	u.Fields = append(u.Fields, "`name` = ? ")
 	u.Args = append(u.Args, arg)
 	return u
-
 }
-func (u *Updater) SetAge(arg interface{}) UpdateBuilder {
+
+// SetAge set age
+func (u *Updater) SetAge(arg int32) UpdateBuilder {
 	u.Fields = append(u.Fields, "`age` = ? ")
 	u.Args = append(u.Args, arg)
 	return u
-
 }
-func (u *Updater) SetCtime(arg interface{}) UpdateBuilder {
+
+// SetCtime set ctime
+func (u *Updater) SetCtime(arg time.Time) UpdateBuilder {
 	u.Fields = append(u.Fields, "`ctime` = ? ")
 	u.Args = append(u.Args, arg)
 	return u
 }
 
-// TODO 校验条件
+// Save do a update statment
 func (u *Updater) Save(ctx context.Context, db crud.DB) (int64, error) {
 	var where string
 	var args []interface{}
@@ -187,10 +201,10 @@ func (u *Updater) Save(ctx context.Context, db crud.DB) (int64, error) {
 	b.WriteString(strings.Join(u.Fields, ","))
 	b.WriteString(where)
 	u.Args = append(u.Args, args...)
-	fmt.Println(b.String(), u.Args)
 	result, err := db.ExecContext(ctx, b.String(), u.Args...)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected()
 }
+

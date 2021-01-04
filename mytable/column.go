@@ -34,7 +34,7 @@ func MyTableColumns(db *sql.DB, schema string, table string) ([]*Column, error) 
 		`IF(is_nullable = 'YES', false, true) AS not_null, ` +
 		`IF(column_key = 'PRI', true, false) AS is_primary_key, ` +
 		`IF(extra = 'auto_increment',true,false) AS is_auto_incrment,` +
-		`IF (column_default = 'CURRENT_TIMESTAMP',true,false) AS is_default_currenttimestamp ` +
+		`IF (column_default = 'CURRENT_TIMESTAMP' or column_default = 'current_timestamp()',true,false) AS is_default_currenttimestamp ` +
 		`FROM information_schema.columns ` +
 		`WHERE table_schema = ? AND table_name = ? ` +
 		`ORDER BY ordinal_position`

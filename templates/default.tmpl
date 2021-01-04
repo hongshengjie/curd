@@ -1,0 +1,188 @@
+
+package {{.PackageName}}
+
+import (
+    "bytes"
+	"context"
+	"errors"
+	"strings"
+	{{if .ImportTime}}"time"{{end}}
+    "github.com/hongshengjie/crud"	
+)
+{{ $table := .}}
+
+// {{.GoTableName}} represents a row from '{{.TableName}}'.
+type {{.GoTableName}} struct {
+	{{- range .Fields }}
+    	{{ .GoColumnName }} {{  .GoColumnType }} `json:"{{ .ColumnName }}"` // {{ .ColumnComment }}
+    {{- end }}
+}
+
+const (
+    table = "`{{.TableName}}`"
+    fields = "{{sqltool . false "field"}}"
+    {{- range .Fields }}
+        //{{ .GoColumnName }} {{ .ColumnComment }}
+    	{{ .GoColumnName }} = "`{{ .ColumnName }}`" 
+    {{- end }}
+)
+
+
+// Insert  Insert a record
+func Insert(ctx context.Context, db crud.DB, a *{{.GoTableName}} ) error {
+	const sqlstr = "INSERT INTO  `{{.TableName}}` (" +
+		" {{ sqltool . true "field"}}" +
+		`) VALUES (` +
+		` {{ sqltool . true "?"}}` +
+		`)`
+
+	result, err := db.ExecContext(ctx, sqlstr, {{ sqltool . true "gofield"}})
+	if err != nil {
+		return err
+	}
+    {{if .PrimaryKey.IsAutoIncrment}}
+    id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+    a.{{.PrimaryKey.GoColumnName}} = {{.PrimaryKey.GoColumnType}}(id)
+    {{end}}
+	return nil
+}
+
+// Delete Delete by primary key:`{{.PrimaryKey.ColumnName}}`
+func Delete(ctx context.Context, db crud.DB, {{.PrimaryKey.ColumnName}} {{.PrimaryKey.GoColumnType}})(int64,error){
+    const sqlstr = `DELETE FROM  {{.TableName}} WHERE {{.PrimaryKey.ColumnName}} = ?`
+    result, err := db.ExecContext(ctx, sqlstr, {{.PrimaryKey.ColumnName}})
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+// Where  create where builder for update or query 
+func Where() *crud.Where {
+	return &crud.Where{}
+}
+
+// Query create query builder  maybe with where builder 
+func Query(where crud.WhereBuilder) crud.QueryBuilder {
+	return &crud.Query{
+		Table:     table,
+		AllFields: fields,
+		Where:     where,
+	}
+}
+
+// FindOne find a record
+func FindOne(ctx context.Context, db crud.DB, build crud.Builder) (*{{.GoTableName}}, error) {
+	sql, args := build.Build()
+	return FindOneRaw(ctx, db, sql, args...)
+}
+
+// FindOneRaw find a record by raw sql 
+func FindOneRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) (*{{.GoTableName}}, error) {
+	a := {{.GoTableName}}{}
+	err := db.QueryRowContext(ctx, sql, args...).Scan({{ sqltool . false "gofield"}})
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// Find Find many record by where statment or query statment 
+func Find(ctx context.Context, db crud.DB, build crud.Builder) ([]*{{.GoTableName}}, error) {
+	sql, args := build.Build()
+	return FindRaw(ctx, db, sql, args...)
+}
+
+// FindRaw FindRaw many record by raw sql 
+func FindRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) ([]*{{.GoTableName}}, error) {
+	q, err := db.QueryContext(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer q.Close()
+
+	res := []*{{.GoTableName}}{}
+	for q.Next() {
+		a := {{.GoTableName}}{}
+		err = q.Scan({{sqltool . false "gofield"}})
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, &a)
+	}
+	if q.Err() != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// Count Count return number of rows that fit the where statment 
+func Count(ctx context.Context, db crud.DB, build crud.Builder) (int64, error) {
+	sql, args := build.Build()
+	var a int64
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(1) FROM `{{.TableName}}` "+sql, args...).Scan(&a); err != nil {
+		return 0, err
+	}
+	return a, nil
+}
+
+
+
+// UpdateBuilder UpdateBuilder
+type UpdateBuilder interface {
+     {{- range .Fields }}
+    	Set{{.GoColumnName}}(arg {{.GoColumnType}})UpdateBuilder
+    {{- end }}
+	Save(ctx context.Context, db crud.DB) (int64, error)
+}
+
+// Updater Updater
+type Updater struct {
+	where  crud.WhereBuilder
+	Args   []interface{}
+	Fields []string
+}
+// Update return a Updater 
+func Update(where crud.WhereBuilder) *Updater {
+	return &Updater{
+		where: where,
+	}
+}
+{{- range .Fields }}
+// Set{{.GoColumnName}} set {{.ColumnName}}
+func (u *Updater) Set{{.GoColumnName}}(arg {{.GoColumnType}}) UpdateBuilder {
+	u.Fields = append(u.Fields, "`{{.ColumnName}}` = ? ")
+	u.Args = append(u.Args, arg)
+	return u
+} 	
+{{- end }}
+// Save do a update statment
+func (u *Updater) Save(ctx context.Context, db crud.DB) (int64, error) {
+	var where string
+	var args []interface{}
+	if u.where != nil {
+		where, args = u.where.Build()
+	}
+	if len(u.Fields) <= 0 {
+		return 0, errors.New("not set update fields")
+	}
+
+	var b bytes.Buffer
+	b.WriteString("UPDATE ")
+	b.WriteString(table)
+	b.WriteString(" SET ")
+	b.WriteString(strings.Join(u.Fields, ","))
+	b.WriteString(where)
+	u.Args = append(u.Args, args...)
+	result, err := db.ExecContext(ctx, b.String(), u.Args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+

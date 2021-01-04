@@ -1,4 +1,4 @@
-module crud
+module github.com/hongshengjie/crud
 
 go 1.12
 
