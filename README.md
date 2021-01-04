@@ -19,13 +19,7 @@
 ## 安装
 
 ```
-
-git clone https://github.com/hongshengjie/crud.git
-
-cd  crud/crud 
-
-go install 
-
+ go get github.com/hongshengjie/crud/crud
 ```
 
 ## 使用方法
