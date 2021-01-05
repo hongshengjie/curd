@@ -24,7 +24,7 @@ func InitDB() {
 }
 func main() {
 	InitDB()
-	create()
+	//create()
 	findOne()
 	find()
 	update()
@@ -47,9 +47,10 @@ func findOne() {
 }
 
 func find() {
-	user, err := user.Find(ctx, db, user.Query(user.Where().Gt(user.ID, 0)))
+	user, err := user.Find(ctx, db, user.Query(user.
+		Where().NotIn(user.ID, []interface{}{1, 2})).OrderDesc(user.ID).Limit(2).Offset(2))
 	b, _ := json.Marshal(user)
-	fmt.Printf("%s, %+v", string(b), err)
+	fmt.Printf("%s, %+v \n", string(b), err)
 }
 
 func update() {

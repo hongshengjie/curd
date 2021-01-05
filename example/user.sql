@@ -5,4 +5,4 @@ CREATE TABLE `user` (
   `ctime` datetime NOT NULL DEFAULT current_timestamp() COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `user_name_IDX` (`name`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4

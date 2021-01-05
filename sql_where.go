@@ -103,12 +103,12 @@ func (w *Where) NotBetween(field string, arg1, arg2 interface{}) WhereBuilder {
 }
 
 func (w *Where) Like(field string, arg string) WhereBuilder {
-	w.Fields = append(w.Fields, fmt.Sprintf(" %s LIKE %s", field, arg))
+	w.Fields = append(w.Fields, fmt.Sprintf(" %s LIKE '%s'", field, arg))
 	return w
 }
 
 func (w *Where) NotLike(field, arg string) WhereBuilder {
-	w.Fields = append(w.Fields, fmt.Sprintf(" %s NOT LIKE %s", field, arg))
+	w.Fields = append(w.Fields, fmt.Sprintf(" %s NOT LIKE '%s'", field, arg))
 	return w
 }
 

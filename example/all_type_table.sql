@@ -35,4 +35,4 @@ CREATE TABLE `all_type_table` (
   UNIQUE KEY `ix_ccc` (`b_int`,`char_m`),
   KEY `ix_ddd` (`m_int`,`varchar_m`,`timestamp_m`),
   KEY `uk_uuu` (`t_int`,`s_int`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 

@@ -77,7 +77,8 @@ func (s *Query) Build() (string, []interface{}) {
 		if s.offset < 0 {
 			s.offset = 0
 		}
-		b.WriteString(fmt.Sprintf(" LIMIT %d , OFFSET %d", s.limit, s.offset))
+		b.WriteString(fmt.Sprintf(" LIMIT %d  OFFSET %d", s.limit, s.offset))
 	}
+	fmt.Println(b.String(), args)
 	return b.String(), args
 }
