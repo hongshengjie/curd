@@ -75,7 +75,7 @@ func Query(where crud.WhereBuilder) crud.QueryBuilder {
 }
 
 // FindOne find a record
-func FindOne(ctx context.Context, db crud.DB, build crud.Builder) (*{{.GoTableName}}, error) {
+func FindOne(ctx context.Context, db crud.DB, build crud.QueryBuilder) (*{{.GoTableName}}, error) {
 	sql, args := build.Build()
 	return FindOneRaw(ctx, db, sql, args...)
 }
@@ -91,7 +91,7 @@ func FindOneRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}
 }
 
 // Find Find many record by where statment or query statment 
-func Find(ctx context.Context, db crud.DB, build crud.Builder) ([]*{{.GoTableName}}, error) {
+func Find(ctx context.Context, db crud.DB, build crud.QueryBuilder) ([]*{{.GoTableName}}, error) {
 	sql, args := build.Build()
 	return FindRaw(ctx, db, sql, args...)
 }
@@ -121,7 +121,7 @@ func FindRaw(ctx context.Context, db crud.DB, sql string, args ...interface{}) (
 }
 
 // Count Count return number of rows that fit the where statment 
-func Count(ctx context.Context, db crud.DB, build crud.Builder) (int64, error) {
+func Count(ctx context.Context, db crud.DB, build crud.WhereBuilder) (int64, error) {
 	sql, args := build.Build()
 	var a int64
 	if err := db.QueryRowContext(ctx, "SELECT COUNT(1) FROM `{{.TableName}}` "+sql, args...).Scan(&a); err != nil {
