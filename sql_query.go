@@ -79,6 +79,6 @@ func (s *Query) Build() (string, []interface{}) {
 		}
 		b.WriteString(fmt.Sprintf(" LIMIT %d  OFFSET %d", s.limit, s.offset))
 	}
-	fmt.Println(b.String(), args)
+	//fmt.Println(b.String(), args)
 	return b.String(), args
 }
