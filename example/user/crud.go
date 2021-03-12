@@ -2,9 +2,8 @@ package user
 
 import (
 	"context"
-	"time"
-
 	"github.com/hongshengjie/crud/xsql"
+	"time"
 )
 
 // InsertBuilder InsertBuilder

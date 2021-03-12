@@ -41,7 +41,7 @@ func Not(p {{$tableName}}Where) {{$tableName}}Where {
 	})
 }
 
-{{- range .IndexesCol }}
+{{- range .GenerateWhereCol }}
 		{{$c1:=eq .BigType  1}}
 		{{$c2:=eq .BigType  3}}
 		{{if  or $c1 $c2  }}

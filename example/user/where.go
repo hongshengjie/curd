@@ -180,6 +180,78 @@ func NameContains(v string) UserWhere {
 	})
 }
 
+// AgeEQ  =
+func AgeEQ(arg int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.EQ(Age, arg))
+	})
+}
+
+// AgeNEQ <>
+func AgeNEQ(arg int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.NEQ(Age, arg))
+	})
+}
+
+// AgeLT <
+func AgeLT(arg int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.LT(Age, arg))
+	})
+}
+
+// AgeLET <=
+func AgeLTE(arg int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.LTE(Age, arg))
+	})
+}
+
+// AgeGT >
+func AgeGT(arg int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.GT(Age, arg))
+	})
+}
+
+// AgeGTE >=
+func AgeGTE(arg int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.GTE(Age, arg))
+	})
+}
+
+// AgeIn in(...)
+func AgeIn(args ...int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		if len(args) == 0 {
+			s.Where(xsql.False())
+			return
+		}
+		v := make([]interface{}, len(args))
+		for i := range v {
+			v[i] = args[i]
+		}
+		s.Where(xsql.In(Age, v...))
+	})
+}
+
+// AgeNotIn not in(...)
+func AgeNotIn(args ...int32) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		if len(args) == 0 {
+			s.Where(xsql.False())
+			return
+		}
+		v := make([]interface{}, len(args))
+		for i := range v {
+			v[i] = args[i]
+		}
+		s.Where(xsql.NotIn(Age, v...))
+	})
+}
+
 // MtimeEQ  =
 func MtimeEQ(arg time.Time) UserWhere {
 	return UserWhere(func(s *xsql.Selector) {

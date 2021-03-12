@@ -2,6 +2,8 @@ package mytable
 
 import (
 	"database/sql"
+
+	"log"
 	"sort"
 	"strings"
 
@@ -10,20 +12,20 @@ import (
 
 // Table Table
 type Table struct {
-	TableName       string    // table name
-	GoTableName     string    // go struct name
-	PackageName     string    // package name
-	Fields          []*Column // columns
-	Indexes         []*Index  // indexes
-	IndexesCol      []*Column // indexes column 用于生成where.go
-	WhereImportTime bool      // is need import time where.go
-	PrimaryKey      *Column   // priomary_key column
-	ImportTime      bool      // is need import time
-
+	TableName        string    // table name
+	GoTableName      string    // go struct name
+	PackageName      string    // package name
+	Fields           []*Column // columns
+	Indexes          []*Index  // indexes
+	GenerateWhereCol []*Column // GenerateWhereCol 生成where字段比较方法的列
+	ConditionsFields []string  // ConditionsFields  用户指定生成的条件方法
+	WhereImportTime  bool      // is need import time where.go
+	PrimaryKey       *Column   // priomary_key column
+	ImportTime       bool      // is need import time
 }
 
 // NewTable NewTable
-func NewTable(db *sql.DB, schema, table string) *Table {
+func NewTable(db *sql.DB, schema, table string, conditionsFields []string, isAll bool) *Table {
 	gotableName := snaker.SnakeToCamelIdentifier(table)
 	mytable := &Table{
 		TableName:   table,
@@ -32,15 +34,33 @@ func NewTable(db *sql.DB, schema, table string) *Table {
 	}
 	columns, err := MyTableColumns(db, schema, table)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if len(columns) <= 0 {
-		panic("schema or table not exist")
+		log.Fatal("schema or table not exist")
+	}
+	mytable.Fields = columns
+	for _, v := range columns {
+		if v.IsPrimaryKey {
+			mytable.PrimaryKey = v
+		}
+		if v.GoColumnType == "time.Time" {
+			mytable.ImportTime = true
+		}
+	}
+	if mytable.PrimaryKey == nil {
+		log.Fatal("table do not have a primary key")
+	}
+	if isAll {
+		mytable.GenerateWhereCol = mytable.Fields
+		mytable.WhereImportTime = mytable.ImportTime
+		return mytable
 	}
 
+	// 搞索引
 	indexes, err := MyTableIndexes(db, schema, table)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	indexcols := make(map[string]*Column)
 	for _, v := range indexes {
@@ -52,38 +72,31 @@ func NewTable(db *sql.DB, schema, table string) *Table {
 					break
 				}
 			}
-
 		}
 	}
-	indexcolarr := make([]*Column, 0, len(indexcols))
+	// 添加索引列之外 指定的field
+	for _, v := range conditionsFields {
+		for _, c := range columns {
+			if c.ColumnName == v {
+				indexcols[c.ColumnName] = c
+				break
+			}
+		}
+	}
+	generateCol := make([]*Column, 0, len(indexcols))
 	for _, v := range indexcols {
 		if v.GoColumnType == "time.Time" {
 			mytable.WhereImportTime = true
 		}
-		indexcolarr = append(indexcolarr, v)
+		generateCol = append(generateCol, v)
 	}
-	sort.Slice(indexcolarr, func(i, j int) bool {
-		return indexcolarr[i].OrdinalPosition < indexcolarr[j].OrdinalPosition
-	})
-	mytable.IndexesCol = indexcolarr
 
+	sort.Slice(generateCol, func(i, j int) bool {
+		return generateCol[i].OrdinalPosition < generateCol[j].OrdinalPosition
+	})
+	mytable.GenerateWhereCol = generateCol
 	mytable.Indexes = indexes
-	mytable.Fields = columns
-	for _, v := range columns {
-		if v.IsPrimaryKey {
-			mytable.PrimaryKey = v
-			break
-		}
-	}
-	if mytable.PrimaryKey == nil {
-		panic("table do not have a primary key")
-	}
-	for _, v := range columns {
-		if v.GoColumnType == "time.Time" {
-			mytable.ImportTime = true
-			break
-		}
-	}
+
 	return mytable
 
 }
