@@ -2,8 +2,9 @@ package user
 
 import (
 	"context"
-	"github.com/hongshengjie/crud/xsql"
 	"time"
+
+	"github.com/hongshengjie/crud/xsql"
 )
 
 // InsertBuilder InsertBuilder
@@ -120,6 +121,18 @@ func Find(dt xsql.DBTX) *SelectBuilder {
 	return sel
 }
 
+// Select Select
+func (s *SelectBuilder) Select(columns ...string) *SelectBuilder {
+	s.builder.Select(columns...)
+	return s
+}
+
+// Count Count
+func (s *SelectBuilder) Count(columns ...string) *SelectBuilder {
+	s.builder.Count(columns...)
+	return s
+}
+
 // Table  涉及到分表查询的时候指定表名，通常情况下不需要调用此方法
 func (s *SelectBuilder) Table(name string) *SelectBuilder {
 	s.builder.From(xsql.Table(name))
@@ -178,7 +191,14 @@ func (s *SelectBuilder) One(ctx context.Context) (*User, error) {
 		s.builder.Columns(Columns...)
 	}
 	sel, args := s.builder.Query()
-	return queryRow(ctx, s.dt, sel, args...)
+	results, err := queryUser(ctx, s.dt, sel, args...)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) <= 0 {
+		return nil, xsql.ErrNoRows
+	}
+	return results[0], nil
 }
 
 // All find all rows
@@ -187,41 +207,40 @@ func (s *SelectBuilder) All(ctx context.Context) ([]*User, error) {
 		s.builder.Columns(Columns...)
 	}
 	sel, args := s.builder.Query()
-	return query(ctx, s.dt, sel, args...)
+	return queryUser(ctx, s.dt, sel, args...)
 }
 
-// QueryRow find a record by raw sql
-func queryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}) (*User, error) {
-	a := User{}
-	err := dt.QueryRowContext(ctx, sql, args...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
-	if err != nil {
-		return nil, err
-	}
-	return &a, nil
+// Int64 count or select only one int field
+func (s *SelectBuilder) Int64(ctx context.Context) (int64, error) {
+	return xsql.Int64(ctx, s.builder, s.dt)
+}
+
+// Int64 count or select only one int field
+func (s *SelectBuilder) Int64s(ctx context.Context) ([]int64, error) {
+	return xsql.Int64s(ctx, s.builder, s.dt)
 }
 
 // Query FindRaw many record by raw sql
-func query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*User, error) {
+func (s *SelectBuilder) String(ctx context.Context) (string, error) {
+	return xsql.String(ctx, s.builder, s.dt)
+}
 
+// Query FindRaw many record by raw sql
+func (s *SelectBuilder) Strings(ctx context.Context) ([]string, error) {
+	return xsql.Strings(ctx, s.builder, s.dt)
+}
+
+// Query FindRaw many record by raw sql
+func queryUser(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*User, error) {
 	q, err := dt.QueryContext(ctx, sqlstr, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer q.Close()
-
 	res := []*User{}
-	for q.Next() {
-		a := User{}
-		err = q.Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, &a)
-	}
-	if q.Err() != nil {
+	if err := xsql.ScanSlice(q, &res); err != nil {
 		return nil, err
 	}
-
 	return res, nil
 }
 
