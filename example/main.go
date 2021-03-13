@@ -80,12 +80,6 @@ func UserExample() {
 	tx.Commit()
 	fmt.Println(effect, err)
 
-	users, err := user.Query(ctx, db, "select * from user where id = ?", 1)
-	fmt.Println(users, err)
-	tx, _ = db.Begin()
-	users, err = user.Query(ctx, tx, "select * from user where id = ?", 1)
-	fmt.Println(users, err)
-
 }
 func main() {
 	InitDB()

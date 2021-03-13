@@ -65,7 +65,7 @@ func (i *InsertBuilder) Schema(name string) *InsertBuilder {
 
 // Table sets the table name for the insert table.
 func (i *InsertBuilder) Table(name string) *InsertBuilder {
-	i.schema = name
+	i.table = name
 	return i
 }
 

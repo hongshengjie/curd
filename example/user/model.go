@@ -10,7 +10,6 @@ type User struct {
 	Name  string    `json:"name"`  // 名称
 	Age   int32     `json:"age"`   // 年龄
 	Ctime time.Time `json:"ctime"` // 创建时间
-	Mtime time.Time `json:"mtime"` //
 }
 
 const (
@@ -24,6 +23,4 @@ const (
 	Age = "age"
 	//Ctime 创建时间
 	Ctime = "ctime"
-	//Mtime
-	Mtime = "mtime"
 )

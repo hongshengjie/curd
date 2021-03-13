@@ -176,17 +176,17 @@ func (s *SelectBuilder) OrderAsc(field string) *SelectBuilder {
 // One One
 func (s *SelectBuilder) One(ctx context.Context) (*{{$tableName}}, error) {
 	sel, args := s.builder.Query()
-	return QueryRow(ctx, s.dt, sel, args...)
+	return queryRow(ctx, s.dt, sel, args...)
 }
 
 // All find all rows 
 func (s *SelectBuilder) All(ctx context.Context) ([]*{{$tableName}}, error) {
 	sel, args := s.builder.Query()
-	return Query(ctx, s.dt, sel, args...)
+	return query(ctx, s.dt, sel, args...)
 }
 
 // QueryRow find a record by raw sql
-func QueryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}) (*{{$tableName}}, error) {
+func queryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}) (*{{$tableName}}, error) {
 	a := {{$tableName}}{}
 	err := dt.QueryRowContext(ctx, sql, args...).Scan({{ sqltool . false "gofield"}})
 	if err != nil {
@@ -196,7 +196,7 @@ func QueryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}
 }
 
 // Query FindRaw many record by raw sql
-func Query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*{{$tableName}}, error) {
+func query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*{{$tableName}}, error) {
 
 	q, err := dt.QueryContext(ctx, sqlstr, args...)
 	if err != nil {

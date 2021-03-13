@@ -175,19 +175,19 @@ func (s *SelectBuilder) OrderAsc(field string) *SelectBuilder {
 // One One
 func (s *SelectBuilder) One(ctx context.Context) (*User, error) {
 	sel, args := s.builder.Query()
-	return QueryRow(ctx, s.dt, sel, args...)
+	return queryRow(ctx, s.dt, sel, args...)
 }
 
 // All find all rows
 func (s *SelectBuilder) All(ctx context.Context) ([]*User, error) {
 	sel, args := s.builder.Query()
-	return Query(ctx, s.dt, sel, args...)
+	return query(ctx, s.dt, sel, args...)
 }
 
 // QueryRow find a record by raw sql
-func QueryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}) (*User, error) {
+func queryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}) (*User, error) {
 	a := User{}
-	err := dt.QueryRowContext(ctx, sql, args...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime, &a.Mtime)
+	err := dt.QueryRowContext(ctx, sql, args...).Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func QueryRow(ctx context.Context, dt xsql.DBTX, sql string, args ...interface{}
 }
 
 // Query FindRaw many record by raw sql
-func Query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*User, error) {
+func query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*User, error) {
 
 	q, err := dt.QueryContext(ctx, sqlstr, args...)
 	if err != nil {
@@ -206,7 +206,7 @@ func Query(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}
 	res := []*User{}
 	for q.Next() {
 		a := User{}
-		err = q.Scan(&a.ID, &a.Name, &a.Age, &a.Ctime, &a.Mtime)
+		err = q.Scan(&a.ID, &a.Name, &a.Age, &a.Ctime)
 		if err != nil {
 			return nil, err
 		}
@@ -283,12 +283,6 @@ func (u *Updater) AddAge(arg interface{}) *Updater {
 // SetCtime  set ctime
 func (u *Updater) SetCtime(arg time.Time) *Updater {
 	u.builder.Set(Ctime, arg)
-	return u
-}
-
-// SetMtime  set mtime
-func (u *Updater) SetMtime(arg time.Time) *Updater {
-	u.builder.Set(Mtime, arg)
 	return u
 }
 
