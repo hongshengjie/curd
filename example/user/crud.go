@@ -16,7 +16,7 @@ type InsertBuilder struct {
 // Create Create
 func Create(dt xsql.DBTX) *InsertBuilder {
 	return &InsertBuilder{
-		builder: xsql.Insert(table),
+		builder: xsql.Dialect(dialect).Insert(table),
 		dt:      dt,
 	}
 }
@@ -61,7 +61,7 @@ type DeleteBuilder struct {
 // Delete Delete
 func Delete(dt xsql.DBTX) *DeleteBuilder {
 	return &DeleteBuilder{
-		builder: xsql.Delete(table),
+		builder: xsql.Dialect(dialect).Delete(table),
 		dt:      dt,
 	}
 }
@@ -113,7 +113,7 @@ type SelectBuilder struct {
 // Find Find
 func Find(dt xsql.DBTX) *SelectBuilder {
 	sel := &SelectBuilder{
-		builder: &xsql.Selector{},
+		builder: xsql.Dialect(dialect).Select(),
 		dt:      dt,
 	}
 	sel.builder = sel.builder.From(xsql.Table(table))
@@ -174,12 +174,18 @@ func (s *SelectBuilder) OrderAsc(field string) *SelectBuilder {
 
 // One One
 func (s *SelectBuilder) One(ctx context.Context) (*User, error) {
+	if len(s.builder.Columns()) <= 0 {
+		s.builder.Columns(Columns...)
+	}
 	sel, args := s.builder.Query()
 	return queryRow(ctx, s.dt, sel, args...)
 }
 
 // All find all rows
 func (s *SelectBuilder) All(ctx context.Context) ([]*User, error) {
+	if len(s.builder.Columns()) <= 0 {
+		s.builder.Columns(Columns...)
+	}
 	sel, args := s.builder.Query()
 	return query(ctx, s.dt, sel, args...)
 }
@@ -229,7 +235,7 @@ type Updater struct {
 func Update(dt xsql.DBTX) *Updater {
 	return &Updater{
 		dt:      dt,
-		builder: xsql.Update(table),
+		builder: xsql.Dialect(dialect).Update(table),
 	}
 }
 

@@ -21,3 +21,12 @@ const (
         {{ .GoColumnName}} = "{{.ColumnName}}"  
     {{- end }}
 )
+
+// Columns holds all SQL columns for user fields.
+var Columns = []string{
+	{{- range .Fields}}
+    {{ .GoColumnName}},
+    {{- end }}
+}
+
+var dialect = "{{.Database}}"

@@ -12,6 +12,7 @@ import (
 
 // Table Table
 type Table struct {
+	Database         string
 	TableName        string    // table name
 	GoTableName      string    // go struct name
 	PackageName      string    // package name
@@ -25,9 +26,10 @@ type Table struct {
 }
 
 // NewTable NewTable
-func NewTable(db *sql.DB, schema, table string, conditionsFields []string, isAll bool) *Table {
+func NewTable(db *sql.DB, database, schema, table string, conditionsFields []string, isAll bool) *Table {
 	gotableName := snaker.SnakeToCamelIdentifier(table)
 	mytable := &Table{
+		Database:    database,
 		TableName:   table,
 		GoTableName: gotableName,
 		PackageName: strings.ToLower(gotableName),

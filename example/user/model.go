@@ -24,3 +24,13 @@ const (
 	//Ctime 创建时间
 	Ctime = "ctime"
 )
+
+// Columns holds all SQL columns for user fields.
+var Columns = []string{
+	ID,
+	Name,
+	Age,
+	Ctime,
+}
+
+var dialect = "mysql"

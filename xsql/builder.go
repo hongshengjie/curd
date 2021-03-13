@@ -1830,3 +1830,57 @@ func isModifier(s string) bool {
 	}
 	return false
 }
+
+// DialectBuilder prefixes all root builders with the `Dialect` constructor.
+type DialectBuilder struct {
+	dialect string
+}
+
+// Dialect creates a new DialectBuilder with the given dialect name.
+func Dialect(name string) *DialectBuilder {
+	return &DialectBuilder{name}
+}
+
+// Insert creates a InsertBuilder for the configured dialect.
+//
+//	Dialect(dialect.Postgres).
+//		Insert("users").Columns("age").Values(1)
+//
+func (d *DialectBuilder) Insert(table string) *InsertBuilder {
+	b := Insert(table)
+	b.SetDialect(d.dialect)
+	return b
+}
+
+// Update creates a UpdateBuilder for the configured dialect.
+//
+//	Dialect(dialect.Postgres).
+//		Update("users").Set("name", "foo")
+//
+func (d *DialectBuilder) Update(table string) *UpdateBuilder {
+	b := Update(table)
+	b.SetDialect(d.dialect)
+	return b
+}
+
+// Delete creates a DeleteBuilder for the configured dialect.
+//
+//	Dialect(dialect.Postgres).
+//		Delete().From("users")
+//
+func (d *DialectBuilder) Delete(table string) *DeleteBuilder {
+	b := Delete(table)
+	b.SetDialect(d.dialect)
+	return b
+}
+
+// Select creates a Selector for the configured dialect.
+//
+//	Dialect(dialect.Postgres).
+//		Select().From(Table("users"))
+//
+func (d *DialectBuilder) Select(columns ...string) *Selector {
+	b := Select(columns...)
+	b.SetDialect(d.dialect)
+	return b
+}
