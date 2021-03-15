@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/hongshengjie/crud/xsql"
@@ -36,6 +37,9 @@ func (in *InsertBuilder) SetUser(a *User) *InsertBuilder {
 
 // Save Save
 func (in *InsertBuilder) Save(ctx context.Context) error {
+	if in.a == nil {
+		return errors.New("please set a User")
+	}
 	ins, args := in.builder.Columns(Name, Age).
 		Values(&in.a.Name, &in.a.Age).
 		Query()
@@ -187,11 +191,7 @@ func (s *SelectBuilder) OrderAsc(field string) *SelectBuilder {
 
 // One One
 func (s *SelectBuilder) One(ctx context.Context) (*User, error) {
-	if len(s.builder.Columns()) <= 0 {
-		s.builder.Columns(Columns...)
-	}
-	sel, args := s.builder.Query()
-	results, err := queryUser(ctx, s.dt, sel, args...)
+	results, err := s.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -199,15 +199,6 @@ func (s *SelectBuilder) One(ctx context.Context) (*User, error) {
 		return nil, xsql.ErrNoRows
 	}
 	return results[0], nil
-}
-
-// All find all rows
-func (s *SelectBuilder) All(ctx context.Context) ([]*User, error) {
-	if len(s.builder.Columns()) <= 0 {
-		s.builder.Columns(Columns...)
-	}
-	sel, args := s.builder.Query()
-	return queryUser(ctx, s.dt, sel, args...)
 }
 
 // Int64 count or select only one int field
@@ -230,9 +221,13 @@ func (s *SelectBuilder) Strings(ctx context.Context) ([]string, error) {
 	return xsql.Strings(ctx, s.builder, s.dt)
 }
 
-// Query FindRaw many record by raw sql
-func queryUser(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*User, error) {
-	q, err := dt.QueryContext(ctx, sqlstr, args...)
+// All FindRaw many record by raw sql
+func (s *SelectBuilder) All(ctx context.Context) ([]*User, error) {
+	if len(s.builder.Columns()) <= 0 {
+		s.builder.Columns(Columns...)
+	}
+	sqlstr, args := s.builder.Query()
+	q, err := s.dt.QueryContext(ctx, sqlstr, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -244,15 +239,15 @@ func queryUser(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interfa
 	return res, nil
 }
 
-// Updater Updater
-type Updater struct {
+// UpdateBuilder UpdateBuilder
+type UpdateBuilder struct {
 	builder *xsql.UpdateBuilder
 	dt      xsql.DBTX
 }
 
-// Update return a Updater
-func Update(dt xsql.DBTX) *Updater {
-	return &Updater{
+// Update return a UpdateBuilder
+func Update(dt xsql.DBTX) *UpdateBuilder {
+	return &UpdateBuilder{
 		dt:      dt,
 		builder: xsql.Dialect(dialect).Update(table),
 	}
@@ -260,19 +255,19 @@ func Update(dt xsql.DBTX) *Updater {
 
 // Table  for custom demand  change table name  for example   sub table system
 // In the case of no sub-table you do not need this method
-func (u *Updater) Table(name string) *Updater {
+func (u *UpdateBuilder) Table(name string) *UpdateBuilder {
 	u.builder.Table(name)
 	return u
 }
 
 // WhereP WhereP
-func (u *Updater) WhereP(p *xsql.Predicate) *Updater {
+func (u *UpdateBuilder) WhereP(p *xsql.Predicate) *UpdateBuilder {
 	u.builder.Where(p)
 	return u
 }
 
 // Where Where
-func (u *Updater) Where(p ...UserWhere) *Updater {
+func (u *UpdateBuilder) Where(p ...UserWhere) *UpdateBuilder {
 	s := &xsql.Selector{}
 	for _, v := range p {
 		v(s)
@@ -282,43 +277,49 @@ func (u *Updater) Where(p ...UserWhere) *Updater {
 }
 
 // SetID  set id
-func (u *Updater) SetID(arg uint32) *Updater {
+func (u *UpdateBuilder) SetID(arg uint32) *UpdateBuilder {
 	u.builder.Set(ID, arg)
 	return u
 }
 
 // SetName  set name
-func (u *Updater) SetName(arg string) *Updater {
+func (u *UpdateBuilder) SetName(arg string) *UpdateBuilder {
 	u.builder.Set(Name, arg)
 	return u
 }
 
 // SetAge  set age
-func (u *Updater) SetAge(arg int32) *Updater {
+func (u *UpdateBuilder) SetAge(arg int32) *UpdateBuilder {
 	u.builder.Set(Age, arg)
 	return u
 }
 
 // AddAge  add  age set x = x + arg
-func (u *Updater) AddAge(arg interface{}) *Updater {
+func (u *UpdateBuilder) AddAge(arg interface{}) *UpdateBuilder {
 	u.builder.Add(Age, arg)
 	return u
 }
 
 // SetCtime  set ctime
-func (u *Updater) SetCtime(arg time.Time) *Updater {
+func (u *UpdateBuilder) SetCtime(arg time.Time) *UpdateBuilder {
 	u.builder.Set(Ctime, arg)
 	return u
 }
 
+// SetMtime  set mtime
+func (u *UpdateBuilder) SetMtime(arg time.Time) *UpdateBuilder {
+	u.builder.Set(Mtime, arg)
+	return u
+}
+
 // ByID  update by primary key
-func (u *Updater) ByID(id uint32) *Updater {
+func (u *UpdateBuilder) ByID(id uint32) *UpdateBuilder {
 	u.builder.Where(xsql.EQ(ID, id))
 	return u
 }
 
 // Save do a update statment  if tx can without context
-func (u *Updater) Save(ctx context.Context) (int64, error) {
+func (u *UpdateBuilder) Save(ctx context.Context) (int64, error) {
 	up, args := u.builder.Query()
 	result, err := u.dt.ExecContext(ctx, up, args...)
 	if err != nil {

@@ -2,8 +2,10 @@ package {{.PackageName}}
 
 import (
 	"context"
-	"github.com/hongshengjie/crud/xsql"
+	"errors"
 	{{if .ImportTime}}"time"{{end}}
+
+	"github.com/hongshengjie/crud/xsql"
 )
 {{ $tableName := .GoTableName}}
 // InsertBuilder InsertBuilder
@@ -35,6 +37,9 @@ func (in *InsertBuilder) Set{{$tableName}}(a *{{$tableName}}) *InsertBuilder {
 
 // Save Save
 func (in *InsertBuilder) Save(ctx context.Context) error {
+	if in.a == nil {
+		return errors.New("please set a {{$tableName}}")
+	}
 	ins, args := in.builder.Columns({{ sqltool . true "goinfieldcol"}}).
 	Values({{ sqltool . true "goinfield"}}).
 	Query()
@@ -188,11 +193,7 @@ func (s *SelectBuilder) OrderAsc(field string) *SelectBuilder {
 
 // One One
 func (s *SelectBuilder) One(ctx context.Context) (*{{$tableName}}, error) {
-	if len(s.builder.Columns()) <= 0 {
-		s.builder.Columns(Columns...)
-	}
-	sel, args := s.builder.Query()
-	results, err := query{{$tableName}}(ctx, s.dt, sel, args...)
+	results, err := s.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -202,14 +203,7 @@ func (s *SelectBuilder) One(ctx context.Context) (*{{$tableName}}, error) {
 	return results[0], nil
 }
 
-// All find all rows 
-func (s *SelectBuilder) All(ctx context.Context) ([]*{{$tableName}}, error) {
-	if len(s.builder.Columns()) <= 0 {
-		s.builder.Columns(Columns...)
-	}
-	sel, args := s.builder.Query()
-	return query{{$tableName}}(ctx, s.dt, sel, args...)
-}
+
 
 // Int64 count or select only one int field
 func (s *SelectBuilder) Int64(ctx context.Context) (int64, error) {
@@ -231,9 +225,13 @@ func (s *SelectBuilder) Strings(ctx context.Context) ([]string, error) {
 	return xsql.Strings(ctx, s.builder, s.dt)
 }
 
-// Query FindRaw many record by raw sql
-func query{{$tableName}}(ctx context.Context, dt xsql.DBTX, sqlstr string, args ...interface{}) ([]*{{$tableName}}, error) {
-	q, err := dt.QueryContext(ctx, sqlstr, args...)
+// All FindRaw many record by raw sql
+func (s *SelectBuilder)All(ctx context.Context) ([]*{{$tableName}}, error) {
+	if len(s.builder.Columns()) <= 0 {
+		s.builder.Columns(Columns...)
+	}
+	sqlstr, args := s.builder.Query()
+	q, err := s.dt.QueryContext(ctx, sqlstr, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -246,15 +244,15 @@ func query{{$tableName}}(ctx context.Context, dt xsql.DBTX, sqlstr string, args 
 }
 
 
-// Updater Updater
-type Updater struct {
+// UpdateBuilder UpdateBuilder
+type UpdateBuilder struct {
 	builder *xsql.UpdateBuilder
 	dt xsql.DBTX
 }
 
-// Update return a Updater
-func Update(dt xsql.DBTX) *Updater {
-	return &Updater{
+// Update return a UpdateBuilder
+func Update(dt xsql.DBTX) *UpdateBuilder {
+	return &UpdateBuilder{
 		dt: dt,
 		builder: xsql.Dialect(dialect).Update(table),
 	}
@@ -264,19 +262,19 @@ func Update(dt xsql.DBTX) *Updater {
 
 // Table  for custom demand  change table name  for example   sub table system
 // In the case of no sub-table you do not need this method
-func (u *Updater) Table(name string) *Updater {
+func (u *UpdateBuilder) Table(name string) *UpdateBuilder {
 	u.builder.Table(name)
 	return u
 }
 
 // WhereP WhereP
-func (u *Updater) WhereP(p *xsql.Predicate) *Updater {
+func (u *UpdateBuilder) WhereP(p *xsql.Predicate) *UpdateBuilder {
 	u.builder.Where(p)
 	return u
 }
 
 // Where Where
-func (u *Updater) Where(p ...{{$tableName}}Where) *Updater {
+func (u *UpdateBuilder) Where(p ...{{$tableName}}Where) *UpdateBuilder {
 	s := &xsql.Selector{}
 	for _, v := range p {
 		v(s)
@@ -287,7 +285,7 @@ func (u *Updater) Where(p ...{{$tableName}}Where) *Updater {
 
 {{ range .Fields }}
 	// Set{{ .GoColumnName }}  set {{ .ColumnName }}
-	func (u *Updater) Set{{ .GoColumnName }} (arg {{  .GoColumnType }}) *Updater {
+	func (u *UpdateBuilder) Set{{ .GoColumnName }} (arg {{  .GoColumnType }}) *UpdateBuilder {
 		u.builder.Set({{ .GoColumnName }} , arg)
 		return u
 	}
@@ -296,7 +294,7 @@ func (u *Updater) Where(p ...{{$tableName}}Where) *Updater {
 	{{if and $c3 $c4}}
 	
 	// Add{{.GoColumnName}}  add  {{.ColumnName}} set x = x + arg 
-	func (u *Updater) Add{{ .GoColumnName }} (arg  interface{}) *Updater {
+	func (u *UpdateBuilder) Add{{ .GoColumnName }} (arg  interface{}) *UpdateBuilder {
 		u.builder.Add({{ .GoColumnName }} , arg)
 		return u
 	}
@@ -305,13 +303,13 @@ func (u *Updater) Where(p ...{{$tableName}}Where) *Updater {
 {{ end }}
 
 // By{{.PrimaryKey.GoColumnName}}  update by primary key
-func (u *Updater) By{{.PrimaryKey.GoColumnName}}(id {{.PrimaryKey.GoColumnType}}) *Updater {
+func (u *UpdateBuilder) By{{.PrimaryKey.GoColumnName}}(id {{.PrimaryKey.GoColumnType}}) *UpdateBuilder {
 	u.builder.Where(xsql.EQ({{.PrimaryKey.GoColumnName}}, id))
 	return u
 }
 
 // Save do a update statment  if tx can without context
-func (u *Updater) Save(ctx context.Context) (int64, error) {
+func (u *UpdateBuilder) Save(ctx context.Context) (int64, error) {
 	up, args := u.builder.Query()
 	result, err := u.dt.ExecContext(ctx, up, args...)
 	if err != nil {

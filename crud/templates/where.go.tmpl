@@ -1,8 +1,8 @@
 package {{.PackageName}}
 
 import (
-	"github.com/hongshengjie/crud/xsql"
 	{{if .WhereImportTime}}"time"{{end}}
+	"github.com/hongshengjie/crud/xsql"
 )
 {{ $tableName := .GoTableName}}
 

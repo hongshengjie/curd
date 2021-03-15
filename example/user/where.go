@@ -1,6 +1,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/hongshengjie/crud/xsql"
 )
 
@@ -176,5 +178,77 @@ func NameHasSuffix(v string) UserWhere {
 func NameContains(v string) UserWhere {
 	return UserWhere(func(s *xsql.Selector) {
 		s.Where(xsql.Contains(Name, v))
+	})
+}
+
+// MtimeEQ  =
+func MtimeEQ(arg time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.EQ(Mtime, arg))
+	})
+}
+
+// MtimeNEQ <>
+func MtimeNEQ(arg time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.NEQ(Mtime, arg))
+	})
+}
+
+// MtimeLT <
+func MtimeLT(arg time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.LT(Mtime, arg))
+	})
+}
+
+// MtimeLET <=
+func MtimeLTE(arg time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.LTE(Mtime, arg))
+	})
+}
+
+// MtimeGT >
+func MtimeGT(arg time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.GT(Mtime, arg))
+	})
+}
+
+// MtimeGTE >=
+func MtimeGTE(arg time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		s.Where(xsql.GTE(Mtime, arg))
+	})
+}
+
+// MtimeIn in(...)
+func MtimeIn(args ...time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		if len(args) == 0 {
+			s.Where(xsql.False())
+			return
+		}
+		v := make([]interface{}, len(args))
+		for i := range v {
+			v[i] = args[i]
+		}
+		s.Where(xsql.In(Mtime, v...))
+	})
+}
+
+// MtimeNotIn not in(...)
+func MtimeNotIn(args ...time.Time) UserWhere {
+	return UserWhere(func(s *xsql.Selector) {
+		if len(args) == 0 {
+			s.Where(xsql.False())
+			return
+		}
+		v := make([]interface{}, len(args))
+		for i := range v {
+			v[i] = args[i]
+		}
+		s.Where(xsql.NotIn(Mtime, v...))
 	})
 }
